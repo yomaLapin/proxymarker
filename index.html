@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <!-- viewport-fit=cover 추가: iPhone 등 노치 및 하단 홈 인디케이터 Safe Area 대응 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <!-- PWA 매니페스트 및 모바일 웹앱 설정 -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#121212">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
+    <title>프록시 영상 마커 기록기</title>
+    <style>
+        /* 기본 설정 및 리셋 */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+            height: 100dvh; 
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; 
+            touch-action: none; 
+            /* 가로 모드 시 좌우 Safe Area 여백 확보 */
+            padding-left: env(safe-area-inset-left);
+            padding-right: env(safe-area-inset-right);
+        }
+
+        /* 상단 헤더 */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            /* 상단 Safe Area 확보 */
+            padding: calc(8px + env(safe-area-inset-top)) 12px 8px 12px;
+            background-color: #1e1e1e;
+            flex-shrink: 0;
+            gap: 10px;
+        }
+        .title-area {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            flex-grow: 1;
+            overflow: hidden;
+        }
+        #project-title {
+            font-weight: bold;
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        #creator-credit {
+            font-size: 10px;
+            color: #888;
+            margin-top: 2px;
+        }
+        .header-actions {
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+        .header-btn {
+            background: #333; color: white; border: none; padding: 6px 12px;
+            border-radius: 4px; font-size: 12px; cursor: pointer;
+        }
+        .btn-danger-sm { background: #ff3b30; }
+
+        /* 메인 레이아웃 래퍼 (세로/가로 반응형) */
+        .app-body {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .panel-left, .panel-right { display: contents; }
+
+        /* 세로 모드 순서 지정: 마커 패드를 최하단(6)으로 이동, 리스트를 위(5)로 올림 */
+        #video-container { order: 1; }
+        #progress-container { order: 2; }
+        #controls-row { order: 3; }
+        footer { order: 4; }
+        #marker-list-container { order: 5; flex: 1 1 100px; }
+        #marker-pad-wrapper { order: 6; }
+
+        @media (orientation: landscape) {
+            .app-body { flex-direction: row; }
+            .panel-left { display: flex; flex-direction: column; width: 55%; border-right: 1px solid #333; }
+            .panel-right { display: flex; flex-direction: column; width: 45%; background: #121212; }
+            
+            #video-container, #progress-container, #controls-row, footer,
+            #marker-pad-wrapper, #marker-list-container { order: unset; }
+
+            #video-container { flex: 1 1 auto; }
+            #progress-container { flex-shrink: 0; }
+            #controls-row { flex-shrink: 0; }
+            /* 가로모드 왼쪽 패널 최하단인 footer에 바텀 Safe Area 적용 */
+            footer { flex-shrink: 0; border-top: none; padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
+
+            #marker-pad-wrapper { flex-shrink: 0; }
+            #marker-list-container { flex: 1 1 100px; }
+        }
+
+        /* 영상 재생 영역 */
+        #video-container {
+            position: relative;
+            flex: 1 1 auto;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        #video-player {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            pointer-events: none; 
+        }
+        
+        #play-indicator {
+            position: absolute;
+            font-size: 48px;
+            color: rgba(255,255,255,0.7);
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        /* 영상 재생시간 표시 (좌측 하단) */
+        #time-overlay {
+            position: absolute;
+            left: 10px;
+            bottom: 10px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #fff;
+            pointer-events: none;
+            z-index: 10;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* 진행률 바 */
+        #progress-container {
+            flex-shrink: 0;
+            padding: 10px 12px;
+            background: #1e1e1e;
+            touch-action: none;
+        }
+        #progress-bar {
+            position: relative;
+            width: 100%;
+            height: 8px;
+            background: #444;
+            border-radius: 4px;
+        }
+        #progress-fill {
+            position: absolute;
+            left: 0; top: 0; height: 100%;
+            background: #007aff;
+            border-radius: 4px;
+            width: 0%;
+            pointer-events: none;
+        }
+        .marker-dot {
+            position: absolute;
+            top: 50%; transform: translate(-50%, -50%);
+            width: 10px; height: 10px;
+            border-radius: 50%; border: 1px solid #fff;
+            pointer-events: none;
+        }
+
+        /* 하단 컨트롤 영역 */
+        #controls-row {
+            display: flex;
+            gap: 10px;
+            padding: 0 12px 10px 12px;
+            background: #1e1e1e;
+            flex-shrink: 0;
+        }
+        .btn {
+            flex: 1;
+            padding: 10px 0;
+            text-align: center;
+            background: #333;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            white-space: nowrap;
+        }
+        .btn-primary { background: #007aff; }
+
+        /* 마커 패널 영역 */
+        #marker-pad-wrapper {
+            flex-shrink: 0;
+            background: #121212;
+            /* 하단 Safe Area 적용 (아이폰 홈 인디케이터 겹침 방지) */
+            padding: 10px 0 calc(10px + env(safe-area-inset-bottom)) 0;
+        }
+        #marker-pages {
+            display: flex;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            scrollbar-width: none; 
+        }
+        #marker-pages::-webkit-scrollbar { display: none; } 
+        .marker-page {
+            flex: 0 0 100%;
+            scroll-snap-align: start;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 8px;
+            padding: 0 12px;
+        }
+        .marker-btn {
+            background: #2c2c2e;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            color: white;
+            font-size: 13px;
+            padding: 15px 5px;
+            text-align: center;
+            cursor: pointer;
+            word-break: break-word;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 50px;
+            transition: opacity 0.2s;
+        }
+        .marker-btn.empty { background: transparent; border: 1px dashed #444; pointer-events: none; }
+        .marker-btn.disabled { opacity: 0.3; pointer-events: none; }
+
+        #page-indicators { text-align: center; margin-top: 8px; }
+        .dot {
+            display: inline-block; width: 6px; height: 6px; background: #555;
+            border-radius: 50%; margin: 0 4px;
+        }
+        .dot.active { background: #fff; }
+
+        /* 마커 기록 목록 */
+        #marker-list-container {
+            flex: 1 1 100px;
+            overflow-y: auto;
+            background: #1e1e1e;
+            padding: 10px 12px;
+            touch-action: pan-y; 
+        }
+        .record-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 10px; background: #2c2c2e; border-radius: 6px;
+            margin-bottom: 8px; font-size: 13px; cursor: pointer; 
+        }
+        .record-item:active { background: #3a3a3c; } 
+        .record-time { font-weight: bold; width: 60px; color: #aaa; }
+        .record-info { flex: 1; display: flex; align-items: center; gap: 8px; margin: 0 10px; }
+        .record-color { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+        .record-actions button {
+            background: #444; border: none; color: white; padding: 5px 8px;
+            border-radius: 4px; font-size: 11px; margin-left: 5px; cursor: pointer;
+        }
+
+        /* 하단 액션 바 */
+        footer {
+            display: flex; gap: 10px; padding: 10px 12px;
+            background: #121212; flex-shrink: 0; border-top: 1px solid #333;
+        }
+        
+        /* 모달 */
+        #modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8); z-index: 1000;
+            display: none; align-items: center; justify-content: center;
+        }
+        .modal-content {
+            background: #1e1e1e; padding: 20px; border-radius: 12px;
+            width: 90%; max-width: 400px; max-height: 80vh; overflow-y: auto;
+        }
+        .modal-title { margin-bottom: 15px; font-size: 16px; }
+        .modal-close { margin-top: 15px; width: 100%; }
+        .edit-marker-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
+        .edit-marker-row input[type="text"] { flex: 1; padding: 8px; border-radius: 4px; border: 1px solid #444; background: #333; color: white; font-size: 14px; }
+        .edit-marker-row input[type="color"] { width: 40px; height: 40px; padding: 0; border: none; border-radius: 4px; }
+        .add-marker-btn { width: 100%; padding: 10px; background: #007aff; border: none; color: white; border-radius: 6px; margin-bottom: 15px;}
+    </style>
+</head>
+<body>
+    <header>
+        <div class="title-area">
+            <div id="project-title">Proxy Marker v1.3 <span id="offline-badge" style="display:none; font-size:10px; color:#ffcc00; margin-left:5px;">(Offline)</span></div>
+            <div id="creator-credit">Created by yomaLapin</div>
+        </div>
+        <div class="header-actions">
+            <button id="reset-btn" class="header-btn btn-danger-sm">리셋</button>
+            <button id="fullscreen-btn" class="header-btn">전체화면</button>
+        </div>
+    </header>
+
+    <div class="app-body">
+        <div class="panel-left">
+            <div id="video-container">
+                <video id="video-player" playsinline></video>
+                <div id="play-indicator">▶</div>
+                <div id="time-overlay">00:00:00 / 00:00:00</div>
+                <div id="video-placeholder" style="position: absolute; color: #888; text-align: center; pointer-events: none; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%;">
+                    영상을 불러와주세요.
+                </div>
+            </div>
+
+            <div id="progress-container">
+                <div id="progress-bar">
+                    <div id="progress-fill"></div>
+                    <div id="marker-dots-container"></div>
+                </div>
+            </div>
+
+            <div id="controls-row">
+                <label class="btn btn-primary" for="video-upload">Video</label>
+                <input type="file" id="video-upload" accept="video/*, audio/*" style="display:none;">
+                
+                <label class="btn" for="json-load" style="background:#555;">Load</label>
+                <input type="file" id="json-load" accept=".json" style="display:none;">
+                
+                <button id="speed-btn" class="btn">×1</button>
+            </div>
+
+            <footer>
+                <button id="export-save" class="btn btn-primary">Save</button>
+                <button id="manage-markers" class="btn">마커 관리</button>
+            </footer>
+        </div>
+
+        <div class="panel-right">
+            <!-- 마커 리스트와 마커 버튼 영역 위치 교체 (DOM 구조 반영) -->
+            <div id="marker-list-container">
+                <div id="marker-list"></div>
+            </div>
+
+            <div id="marker-pad-wrapper">
+                <div id="marker-pages"></div>
+                <div id="page-indicators"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 마커 관리 모달 -->
+    <div id="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-title">마커 관리</div>
+            <div id="marker-edit-list"></div>
+            <button class="add-marker-btn" id="add-marker-btn">+ 새 마커 추가</button>
+            <button class="btn modal-close" id="close-modal-btn">완료 및 저장</button>
+        </div>
+    </div>
+
+    <script>
+        // 네트워크 상태 감지
+        const offlineBadge = document.getElementById('offline-badge');
+        function updateOnlineStatus() {
+            if (!navigator.onLine) {
+                offlineBadge.style.display = 'inline';
+            } else {
+                offlineBadge.style.display = 'none';
+            }
+        }
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+        updateOnlineStatus(); // 초기 로드 시 감지
+
+        // --- 기존 v1.2 로직 유지 ---
+        const defaultMarkers = [
+            { id: 1, name: '인점', color: '#ff3b30' },
+            { id: 2, name: '아웃점', color: '#007aff' },
+            { id: 3, name: '컷 전환', color: '#34c759' },
+            { id: 4, name: 'CG 필요', color: '#af52de' },
+            { id: 5, name: '음향 주의', color: '#ff9500' },
+            { id: 6, name: '확인요망', color: '#ffcc00' }
+        ];
+
+        let state = { markers: [], records: [] };
+        let currentVideoInfo = null;
+        let currentVideoId = null;
+
+        const DB_NAME = 'ProxyMarkerDB';
+        const DB_VERSION = 1;
+        let db = null;
+
+        function initDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+                request.onupgradeneeded = (e) => {
+                    const database = e.target.result;
+                    if (!database.objectStoreNames.contains('settings')) {
+                        database.createObjectStore('settings', { keyPath: 'id' });
+                    }
+                    if (!database.objectStoreNames.contains('projects')) {
+                        database.createObjectStore('projects', { keyPath: 'id' });
+                    }
+                };
+                request.onsuccess = (e) => {
+                    db = e.target.result;
+                    resolve();
+                };
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        function dbGet(storeName, key) {
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(storeName, 'readonly');
+                const store = tx.objectStore(storeName);
+                const req = store.get(key);
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => reject(req.error);
+            });
+        }
+
+        function dbPut(storeName, data) {
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(storeName, 'readwrite');
+                const store = tx.objectStore(storeName);
+                const req = store.put(data);
+                req.onsuccess = () => resolve();
+                req.onerror = () => reject(req.error);
+            });
+        }
+
+        const video = document.getElementById('video-player');
+        const videoContainer = document.getElementById('video-container');
+        const fileInput = document.getElementById('video-upload');
+        const jsonLoadInput = document.getElementById('json-load');
+        const videoPlaceholder = document.getElementById('video-placeholder');
+        const speedBtn = document.getElementById('speed-btn');
+        const progressContainer = document.getElementById('progress-container');
+        const progressBar = document.getElementById('progress-bar');
+        const progressFill = document.getElementById('progress-fill');
+        const dotsContainer = document.getElementById('marker-dots-container');
+        const markerPages = document.getElementById('marker-pages');
+        const pageIndicators = document.getElementById('page-indicators');
+        const markerList = document.getElementById('marker-list');
+        const resetBtn = document.getElementById('reset-btn');
+        const fullscreenBtn = document.getElementById('fullscreen-btn');
+        const playIndicator = document.getElementById('play-indicator');
+        const timeOverlay = document.getElementById('time-overlay');
+
+        async function initApp() {
+            try {
+                await initDB();
+                await checkLegacyMigration();
+                await loadGlobalSettings();
+                renderMarkerPad();
+                updateTimeOverlay();
+                updateMarkerState();
+                updatePlayIndicator();
+            } catch (err) {
+                console.error("앱 초기화 오류:", err);
+            }
+        }
+
+        async function checkLegacyMigration() {
+            const legacy = localStorage.getItem('proxyMarkerState');
+            if (legacy) {
+                try {
+                    const parsed = JSON.parse(legacy);
+                    let migratedMarkers = false;
+                    if (parsed.markers && parsed.markers.length > 0) {
+                        state.markers = parsed.markers;
+                        await saveGlobalSettings();
+                        migratedMarkers = true;
+                    }
+                    if (parsed.records && parsed.records.length > 0) {
+                        window.legacyRecords = parsed.records;
+                        alert("v1.1의 마커 기록이 발견되었습니다. 복원하시려면 기록과 연결할 영상을 먼저 불러와주세요.");
+                    } else if (migratedMarkers) {
+                        localStorage.removeItem('proxyMarkerState');
+                    }
+                } catch(e) {
+                    console.error("Legacy parsing error", e);
+                }
+            }
+        }
+
+        async function loadGlobalSettings() {
+            const settings = await dbGet('settings', 'global');
+            if (settings && settings.markers) {
+                state.markers = settings.markers;
+            } else {
+                state.markers = JSON.parse(JSON.stringify(defaultMarkers));
+                await saveGlobalSettings();
+            }
+        }
+
+        async function saveGlobalSettings() {
+            await dbPut('settings', { id: 'global', markers: state.markers });
+        }
+
+        async function loadProject(id) {
+            const project = await dbGet('projects', id);
+            if (project && project.records) {
+                state.records = project.records;
+            } else {
+                state.records = []; 
+            }
+        }
+
+        async function saveProject() {
+            if (!currentVideoId) return;
+            await dbPut('projects', {
+                id: currentVideoId,
+                name: currentVideoInfo.name,
+                size: currentVideoInfo.size,
+                lastModified: currentVideoInfo.lastModified,
+                duration: currentVideoInfo.duration,
+                records: state.records,
+                updatedAt: new Date().toISOString()
+            });
+        }
+
+        function formatHHMMSS(seconds) {
+            if (isNaN(seconds) || seconds < 0) return "00:00:00";
+            const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
+            const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+            const s = Math.floor(seconds % 60).toString().padStart(2, '0');
+            return `${h}:${m}:${s}`;
+        }
+
+        function formatTime(seconds) {
+            if (isNaN(seconds)) return "00:00.0";
+            const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+            const s = Math.floor(seconds % 60).toString().padStart(2, '0');
+            const ms = Math.floor((seconds % 1) * 10).toString();
+            if (seconds >= 3600) {
+                const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
+                return `${h}:${m}:${s}.${ms}`;
+            }
+            return `${m}:${s}.${ms}`;
+        }
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const url = URL.createObjectURL(file);
+                video.src = url;
+                videoPlaceholder.style.display = 'none';
+                
+                video.onloadedmetadata = async () => {
+                    const dur = video.duration;
+                    currentVideoInfo = {
+                        name: file.name,
+                        size: file.size,
+                        lastModified: file.lastModified,
+                        duration: dur
+                    };
+                    currentVideoId = `${file.name}_${file.size}_${file.lastModified}_${Math.floor(dur)}`;
+                    
+                    await loadProject(currentVideoId);
+
+                    if (window.legacyRecords) {
+                        if (confirm("이전에 작업하던 v1.1 마커 기록이 존재합니다. 이 영상(프로젝트)에 연결하시겠습니까?")) {
+                            state.records = window.legacyRecords;
+                            delete window.legacyRecords;
+                            localStorage.removeItem('proxyMarkerState');
+                            await saveProject();
+                        } else {
+                            if(confirm("기존 v1.1 기록을 삭제하시겠습니까? (취소 시 다음 영상 선택 시 다시 묻습니다)")) {
+                                delete window.legacyRecords;
+                                localStorage.removeItem('proxyMarkerState');
+                            }
+                        }
+                    }
+
+                    renderMarkerList();
+                    renderProgressDots();
+                    updateMarkerState();
+                    updatePlayIndicator();
+                    updateTimeOverlay();
+                };
+            }
+            e.target.value = ''; 
+        });
+
+        function updateMarkerState() {
+            const isVideoReady = video.src && video.readyState >= 1;
+            const btns = document.querySelectorAll('.marker-btn:not(.empty)');
+            btns.forEach(btn => {
+                if (isVideoReady) {
+                    btn.classList.remove('disabled');
+                } else {
+                    btn.classList.add('disabled');
+                }
+            });
+        }
+
+        function updatePlayIndicator() {
+            if (!video.src || video.readyState === 0) {
+                playIndicator.style.opacity = '0';
+                return;
+            }
+            if (video.paused || video.ended) {
+                playIndicator.style.opacity = '1';
+            } else {
+                playIndicator.style.opacity = '0';
+            }
+        }
+
+        function updateTimeOverlay() {
+            if (!video.src || video.readyState === 0) {
+                timeOverlay.innerText = "00:00:00 / 00:00:00";
+            } else {
+                timeOverlay.innerText = `${formatHHMMSS(video.currentTime)} / ${formatHHMMSS(video.duration)}`;
+            }
+        }
+
+        video.addEventListener('play', () => { updatePlayIndicator(); updateTimeOverlay(); });
+        video.addEventListener('pause', () => { updatePlayIndicator(); updateTimeOverlay(); });
+        video.addEventListener('ended', () => { updatePlayIndicator(); updateTimeOverlay(); });
+        video.addEventListener('seeked', () => { updateTimeOverlay(); });
+        video.addEventListener('timeupdate', () => {
+            updateTimeOverlay();
+            if (!video.duration) return;
+            const percentage = (video.currentTime / video.duration) * 100;
+            progressFill.style.width = `${percentage}%`;
+        });
+
+        const speeds = [1, 1.5, 2];
+        let currentSpeedIdx = 0;
+        speedBtn.addEventListener('click', () => {
+            currentSpeedIdx = (currentSpeedIdx + 1) % speeds.length;
+            const newSpeed = speeds[currentSpeedIdx];
+            video.playbackRate = newSpeed;
+            speedBtn.innerText = `×${newSpeed}`;
+        });
+
+        let touchStartX = 0;
+        let touchStartTime = 0;
+        let isSwiping = false;
+
+        videoContainer.addEventListener('touchstart', (e) => {
+            touchStartX = e.touches[0].clientX;
+            touchStartTime = video.currentTime;
+            isSwiping = false;
+        });
+
+        videoContainer.addEventListener('touchmove', (e) => {
+            const currentX = e.touches[0].clientX;
+            const diffX = currentX - touchStartX;
+            
+            if (Math.abs(diffX) > 20) {
+                isSwiping = true;
+                if (!video.duration) return;
+                const moveSeconds = (diffX / window.innerWidth) * 60; 
+                let newTime = touchStartTime + moveSeconds;
+                newTime = Math.max(0, Math.min(newTime, video.duration));
+                video.currentTime = newTime;
+            }
+        });
+
+        videoContainer.addEventListener('touchend', (e) => {
+            if (!isSwiping && video.src) {
+                if (video.paused) { video.play(); } else { video.pause(); }
+            }
+        });
+
+        function handleProgressInteract(e) {
+            if (!video.duration) return;
+            const rect = progressBar.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX; 
+            let pos = (clientX - rect.left) / rect.width;
+            pos = Math.max(0, Math.min(pos, 1));
+            video.currentTime = pos * video.duration;
+            updateTimeOverlay();
+        }
+
+        progressContainer.addEventListener('mousedown', (e) => {
+            handleProgressInteract(e);
+            const onMouseMove = (e) => handleProgressInteract(e);
+            const onMouseUp = () => {
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+            };
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+        });
+
+        progressContainer.addEventListener('touchstart', (e) => {
+            handleProgressInteract(e);
+        }, {passive: true});
+        progressContainer.addEventListener('touchmove', (e) => {
+            handleProgressInteract(e);
+        }, {passive: true});
+
+        function renderProgressDots() {
+            dotsContainer.innerHTML = '';
+            if (!video.duration) return;
+            
+            state.records.forEach(record => {
+                const percentage = (record.time / video.duration) * 100;
+                const dot = document.createElement('div');
+                dot.className = 'marker-dot';
+                dot.style.left = `${percentage}%`;
+                dot.style.backgroundColor = record.color;
+                dotsContainer.appendChild(dot);
+            });
+        }
+
+        function renderMarkerPad() {
+            markerPages.innerHTML = '';
+            pageIndicators.innerHTML = '';
+            const totalMarkers = state.markers.length;
+            const itemsPerPage = 6;
+            const totalPages = Math.ceil(Math.max(totalMarkers, 1) / itemsPerPage);
+
+            for (let p = 0; p < totalPages; p++) {
+                const pageDiv = document.createElement('div');
+                pageDiv.className = 'marker-page';
+                
+                for (let i = 0; i < itemsPerPage; i++) {
+                    const markerIdx = p * itemsPerPage + i;
+                    const btn = document.createElement('div');
+                    
+                    if (markerIdx < totalMarkers) {
+                        const markerInfo = state.markers[markerIdx];
+                        btn.className = 'marker-btn';
+                        btn.style.borderColor = markerInfo.color;
+                        btn.innerText = markerInfo.name;
+                        
+                        btn.addEventListener('click', () => {
+                            addRecord(markerInfo);
+                        });
+                    } else {
+                        btn.className = 'marker-btn empty';
+                    }
+                    pageDiv.appendChild(btn);
+                }
+                markerPages.appendChild(pageDiv);
+
+                const dot = document.createElement('span');
+                dot.className = 'dot' + (p === 0 ? ' active' : '');
+                pageIndicators.appendChild(dot);
+            }
+            updateMarkerState();
+        }
+
+        markerPages.addEventListener('scroll', () => {
+            const pageIndex = Math.round(markerPages.scrollLeft / markerPages.clientWidth);
+            const dots = pageIndicators.querySelectorAll('.dot');
+            dots.forEach((dot, idx) => {
+                dot.classList.toggle('active', idx === pageIndex);
+            });
+        });
+
+        async function addRecord(markerInfo) {
+            if (!video.src || video.readyState === 0) return;
+
+            const record = {
+                id: Date.now(), 
+                time: video.currentTime || 0,
+                markerId: markerInfo.id,
+                name: markerInfo.name,
+                color: markerInfo.color,
+                note: ''
+            };
+            state.records.push(record);
+            state.records.sort((a, b) => a.time - b.time);
+            
+            await saveProject();
+            renderMarkerList();
+            renderProgressDots();
+        }
+
+        function renderMarkerList() {
+            markerList.innerHTML = '';
+            state.records.forEach(record => {
+                const item = document.createElement('div');
+                item.className = 'record-item';
+                
+                item.innerHTML = `
+                    <div class="record-time">${formatTime(record.time)}</div>
+                    <div class="record-info">
+                        <span class="record-color" style="background-color:${record.color}"></span>
+                        <span>${record.name}</span>
+                        ${record.note ? `<span style="color:#aaa; font-size:11px;">[${record.note}]</span>` : ''}
+                    </div>
+                    <div class="record-actions">
+                        <button onclick="event.stopPropagation(); editNote(${record.id})">메모</button>
+                        <button onclick="event.stopPropagation(); deleteRecord(${record.id})">삭제</button>
+                    </div>
+                `;
+                
+                item.addEventListener('click', () => {
+                    if (!video.src || video.readyState === 0) return;
+                    video.currentTime = record.time;
+                    video.pause();
+                    updateTimeOverlay();
+                });
+
+                markerList.appendChild(item);
+            });
+            markerList.parentElement.scrollTop = markerList.parentElement.scrollHeight;
+        }
+
+        window.editNote = async (recordId) => {
+            const record = state.records.find(r => r.id === recordId);
+            if(record) {
+                const newNote = prompt("메모를 입력하세요:", record.note);
+                if(newNote !== null) {
+                    record.note = newNote.trim();
+                    await saveProject();
+                    renderMarkerList();
+                }
+            }
+        };
+
+        window.deleteRecord = async (recordId) => {
+            state.records = state.records.filter(r => r.id !== recordId);
+            await saveProject();
+            renderMarkerList();
+            renderProgressDots();
+        };
+
+        resetBtn.addEventListener('click', async () => {
+            if (!currentVideoId) {
+                alert("선택된 영상이 없습니다.");
+                return;
+            }
+            if (confirm('현재 영상의 모든 마커 기록이 초기화됩니다. 계속하시겠습니까?\n(다른 영상의 기록과 공통 설정은 보존됩니다)')) {
+                state.records = [];
+                await saveProject();
+                
+                video.removeAttribute('src');
+                video.load(); 
+                fileInput.value = '';
+                currentVideoId = null;
+                currentVideoInfo = null;
+
+                videoPlaceholder.style.display = 'block';
+                videoPlaceholder.innerHTML = "영상을 다시 불러와주세요.";
+                progressFill.style.width = '0%';
+                
+                renderMarkerList();
+                renderProgressDots();
+                updateMarkerState();
+                updatePlayIndicator();
+                updateTimeOverlay();
+            }
+        });
+
+        jsonLoadInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async (ev) => {
+                try {
+                    const data = JSON.parse(ev.target.result);
+                    if (data.format !== 'ProxyMarkerBackup') throw new Error("지원하지 않는 파일 형식입니다.");
+                    
+                    const vidInfo = data.video;
+                    const recs = data.records || [];
+                    const msg = `프로젝트: ${vidInfo.name}\n기록 수: ${recs.length}개\n\n이 프로젝트 데이터를 복원하시겠습니까?`;
+                    
+                    if (!confirm(msg)) return;
+
+                    await dbPut('projects', {
+                        id: vidInfo.id,
+                        name: vidInfo.name,
+                        size: vidInfo.size,
+                        lastModified: vidInfo.lastModified,
+                        duration: vidInfo.duration,
+                        records: recs,
+                        updatedAt: new Date().toISOString()
+                    });
+
+                    if (data.markers && confirm("백업 파일의 공통 마커 설정(이름/색상)을 현재 환경에 덮어쓰시겠습니까?")) {
+                        state.markers = data.markers;
+                        await saveGlobalSettings();
+                        renderMarkerPad();
+                    }
+
+                    if (currentVideoId === vidInfo.id) {
+                        state.records = recs;
+                        renderMarkerList();
+                        renderProgressDots();
+                        alert("현재 화면에 복원된 데이터가 적용되었습니다.");
+                    } else {
+                        alert("데이터가 시스템에 보관되었습니다. 해당 영상을 불러오면 자동으로 연결됩니다.");
+                    }
+                } catch(err) {
+                    alert("백업 파일 읽기 실패: " + err.message);
+                }
+                e.target.value = '';
+            };
+            reader.readAsText(file);
+        });
+
+        document.getElementById('export-save').addEventListener('click', () => {
+            if(!currentVideoId || state.records.length === 0) return alert("저장할 프로젝트/마커 기록이 없습니다.");
+            
+            const payload = {
+                format: "ProxyMarkerBackup",
+                version: "1.3",
+                exportedAt: new Date().toISOString(),
+                video: {
+                    id: currentVideoId,
+                    name: currentVideoInfo.name,
+                    size: currentVideoInfo.size,
+                    lastModified: currentVideoInfo.lastModified,
+                    duration: currentVideoInfo.duration
+                },
+                markers: state.markers,
+                records: state.records
+            };
+            
+            const jsonString = JSON.stringify(payload, null, 2);
+            const dateStr = new Date().toISOString().replace(/[:\-T]/g, '').slice(0, 14);
+            const safeName = currentVideoInfo.name.replace(/\.[^/.]+$/, "");
+            const fileName = `${safeName}_${dateStr}.json`;
+            
+            downloadFile(jsonString, fileName, 'application/json');
+        });
+
+        function downloadFile(content, fileName, mimeType) {
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        fullscreenBtn.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    alert(`전체화면을 지원하지 않는 브라우저입니다: ${err.message}`);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        });
+
+        const manageBtn = document.getElementById('manage-markers');
+        const modalOverlay = document.getElementById('modal-overlay');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const markerEditList = document.getElementById('marker-edit-list');
+        const addMarkerBtn = document.getElementById('add-marker-btn');
+
+        manageBtn.addEventListener('click', () => {
+            renderMarkerEditModal();
+            modalOverlay.style.display = 'flex';
+        });
+
+        closeModalBtn.addEventListener('click', async () => {
+            await saveGlobalSettings();
+            renderMarkerPad();
+            modalOverlay.style.display = 'none';
+        });
+
+        function renderMarkerEditModal() {
+            markerEditList.innerHTML = '';
+            state.markers.forEach((marker, idx) => {
+                const row = document.createElement('div');
+                row.className = 'edit-marker-row';
+                row.innerHTML = `
+                    <input type="color" value="${marker.color}" onchange="updateMarkerColor(${idx}, this.value)">
+                    <input type="text" value="${marker.name}" onchange="updateMarkerName(${idx}, this.value)">
+                    <button class="btn btn-danger-sm" style="padding: 8px;" onclick="removeMarkerType(${idx})">X</button>
+                `;
+                markerEditList.appendChild(row);
+            });
+        }
+
+        window.updateMarkerName = (idx, val) => { state.markers[idx].name = val; };
+        window.updateMarkerColor = (idx, val) => { state.markers[idx].color = val; };
+        window.removeMarkerType = (idx) => {
+            state.markers.splice(idx, 1);
+            renderMarkerEditModal();
+        };
+
+        addMarkerBtn.addEventListener('click', () => {
+            state.markers.push({ id: Date.now(), name: '새 마커', color: '#888888' });
+            renderMarkerEditModal();
+        });
+
+        // PWA 서비스 워커 등록 로직
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('Service Worker 등록 완료:', reg.scope))
+                    .catch(err => console.log('Service Worker 등록 실패:', err));
+            });
+        }
+
+        // 앱 시작
+        initApp();
+    </script>
+</body>
+</html>

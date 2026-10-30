@@ -1,4 +1,6 @@
-const CACHE_NAME = 'proxymarker-cache-v1.4.1';
+const CACHE_PREFIX = 'proxymarker-cache-';
+const CACHE_VERSION = 'v1.4.2';
+const CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
 
 // 캐시할 기본 파일 목록
 const urlsToCache = [
@@ -9,31 +11,36 @@ const urlsToCache = [
     './icon-512.png'
 ];
 
-// 설치(Install) 단계: 새로운 버전의 파일들을 캐시에 저장
+// 1. 설치(Install) 단계: 새로운 버전의 파일들을 캐시에 저장
 self.addEventListener('install', event => {
-    // 새 서비스 워커가 즉시 대기 상태를 건너뛰고 활성화되도록 함
-    self.skipWaiting();
-    
+    // 자동 활성화(skipWaiting)를 제거하여 사용자의 현재 작업을 방해하지 않음
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then(cache => {
-                console.log('Opened cache:', CACHE_NAME);
+                console.log('[ServiceWorker] 캐시 준비 완료:', CACHE_NAME);
                 return cache.addAll(urlsToCache);
             })
     );
 });
 
-// 활성화(Activate) 단계: 구버전 캐시 삭제
+// 2. 메시지 수신: 사용자가 업데이트 알림을 클릭하여 수동 업데이트할 때 활성화
+self.addEventListener('message', event => {
+    if (event.data && event.data.action === 'skipWaiting') {
+        self.skipWaiting();
+    }
+});
+
+// 3. 활성화(Activate) 단계: 기존 앱 캐시 정리
 self.addEventListener('activate', event => {
-    // 설치 즉시 페이지를 제어하도록 설정 (여러 탭이 열려 있어도 즉시 적용)
     event.waitUntil(self.clients.claim());
     
     event.waitUntil(
         caches.keys().then(cacheNames => {
             return Promise.all(
                 cacheNames.map(cacheName => {
-                    if (cacheName !== CACHE_NAME) {
-                        console.log('Deleting old cache:', cacheName);
+                    // ProxyMarker 앱의 구버전 캐시만 삭제하고, 다른 브라우저 데이터는 보호
+                    if (cacheName.startsWith(CACHE_PREFIX) && cacheName !== CACHE_NAME) {
+                        console.log('[ServiceWorker] 구버전 캐시 삭제:', cacheName);
                         return caches.delete(cacheName);
                     }
                 })
@@ -42,25 +49,34 @@ self.addEventListener('activate', event => {
     );
 });
 
-// 요청 가로채기(Fetch) 단계: Network First 전략 (HTML 중심)
+// 4. 요청 가로채기(Fetch) 단계: Network First 전략 + 안정적 캐시 저장
 self.addEventListener('fetch', event => {
-    // 온라인 상태일 때는 네트워크에서 최신 버전을 먼저 가져오고, 
-    // 실패(오프라인)할 경우 캐시에서 가져오는 전략 (Network First)
+    // GET 요청과 내부 리소스(http/https)만 캐싱 대상으로 제한
+    if (event.request.method !== 'GET') return;
+    const url = new URL(event.request.url);
+    if (!url.protocol.startsWith('http')) return;
+
     event.respondWith(
-        fetch(event.request)
-            .then(response => {
-                // 네트워크 요청이 성공하면 캐시도 업데이트
+        (async () => {
+            try {
+                // 온라인인 경우 네트워크에서 최신 리소스 가져오기 시도
+                const response = await fetch(event.request);
+                
+                // 요청이 성공했다면 비동기로 캐시에 저장 (이때 브라우저가 워커를 종료하지 않도록 waitUntil로 대기)
                 if (response && response.status === 200 && response.type === 'basic') {
                     const responseToCache = response.clone();
-                    caches.open(CACHE_NAME).then(cache => {
-                        cache.put(event.request, responseToCache);
-                    });
+                    event.waitUntil(
+                        caches.open(CACHE_NAME).then(cache => {
+                            // 반드시 Promise를 return 하여 저장 완료를 보장
+                            return cache.put(event.request, responseToCache);
+                        })
+                    );
                 }
                 return response;
-            })
-            .catch(() => {
-                // 오프라인 상태이거나 네트워크 에러 발생 시 캐시에서 파일 반환
-                return caches.match(event.request);
-            })
+            } catch (error) {
+                // 네트워크 에러이거나 오프라인 상태인 경우 기존 캐시 반환
+                return await caches.match(event.request);
+            }
+        })()
     );
 });

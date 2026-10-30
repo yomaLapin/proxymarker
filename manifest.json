@@ -1,5 +1,5 @@
 {
-    "name": "Proxy Marker v1.4.1",
+    "name": "Proxy Marker v1.4.2",
     "short_name": "ProxyMarker",
     "description": "오프라인 환경을 지원하는 영상 프록시 마커 기록기",
     "start_url": "./index.html",

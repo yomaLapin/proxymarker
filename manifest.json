@@ -1,22 +1,21 @@
 {
-  "name": "Proxy Marker v1.3",
-  "short_name": "ProxyMarker",
-  "description": "로컬 기반 프록시 영상 마커 기록기",
-  "start_url": "./index.html",
-  "display": "standalone",
-  "background_color": "#121212",
-  "theme_color": "#1e1e1e",
-  "icons": [
-    {
-      "src": "icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
-  ]
+    "name": "Proxy Marker v1.4.1",
+    "short_name": "ProxyMarker",
+    "description": "오프라인 환경을 지원하는 영상 프록시 마커 기록기",
+    "start_url": "./index.html",
+    "display": "standalone",
+    "background_color": "#121212",
+    "theme_color": "#121212",
+    "icons": [
+        {
+            "src": "icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
 }

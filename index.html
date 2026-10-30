@@ -2,10 +2,8 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <!-- viewport-fit=cover 추가: iPhone 등 노치 및 하단 홈 인디케이터 Safe Area 대응 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
-    <!-- PWA 매니페스트 및 모바일 웹앱 설정 -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#121212">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -26,7 +24,6 @@
             flex-direction: column;
             overflow: hidden; 
             touch-action: none; 
-            /* 가로 모드 시 좌우 Safe Area 여백 확보 */
             padding-left: env(safe-area-inset-left);
             padding-right: env(safe-area-inset-right);
         }
@@ -36,7 +33,6 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            /* 상단 Safe Area 확보 */
             padding: calc(8px + env(safe-area-inset-top)) 12px 8px 12px;
             background-color: #1e1e1e;
             flex-shrink: 0;
@@ -72,17 +68,32 @@
         }
         .btn-danger-sm { background: #ff3b30; }
 
-        /* 메인 레이아웃 래퍼 (세로/가로 반응형) */
-        .app-body {
+        /* 화면 전환 탭 스타일 */
+        #tab-menu {
             display: flex;
+            background: #1e1e1e;
+            border-bottom: 1px solid #333;
+            flex-shrink: 0;
+        }
+        .tab-btn {
+            flex: 1; padding: 12px 0; background: transparent; color: #888; 
+            border: none; border-bottom: 3px solid transparent; font-size: 14px; 
+            font-weight: bold; cursor: pointer; transition: all 0.2s;
+        }
+        .tab-btn.active { color: #fff; border-bottom-color: #007aff; }
+
+        /* 메인 레이아웃 래퍼 */
+        .app-body {
+            display: none; 
             flex-direction: column;
             flex: 1;
             overflow: hidden;
         }
+        .app-body.active-view { display: flex; } 
 
+        /* ------ [기존] 체크(기록) 화면 스타일 ------ */
         .panel-left, .panel-right { display: contents; }
 
-        /* 세로 모드 순서 지정: 마커 패드를 최하단(6)으로 이동, 리스트를 위(5)로 올림 */
         #video-container { order: 1; }
         #progress-container { order: 2; }
         #controls-row { order: 3; }
@@ -91,7 +102,7 @@
         #marker-pad-wrapper { order: 6; }
 
         @media (orientation: landscape) {
-            .app-body { flex-direction: row; }
+            #view-check { flex-direction: row; }
             .panel-left { display: flex; flex-direction: column; width: 55%; border-right: 1px solid #333; }
             .panel-right { display: flex; flex-direction: column; width: 45%; background: #121212; }
             
@@ -101,7 +112,6 @@
             #video-container { flex: 1 1 auto; }
             #progress-container { flex-shrink: 0; }
             #controls-row { flex-shrink: 0; }
-            /* 가로모드 왼쪽 패널 최하단인 footer에 바텀 Safe Area 적용 */
             footer { flex-shrink: 0; border-top: none; padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
 
             #marker-pad-wrapper { flex-shrink: 0; }
@@ -109,201 +119,102 @@
         }
 
         /* 영상 재생 영역 */
-        #video-container {
-            position: relative;
-            flex: 1 1 auto;
-            background: #000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-        }
-        #video-player {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            pointer-events: none; 
-        }
+        #video-container { position: relative; flex: 1 1 auto; background: #000; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        #video-player { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+        #play-indicator { position: absolute; font-size: 48px; color: rgba(255,255,255,0.7); opacity: 0; transition: opacity 0.2s; pointer-events: none; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+        #time-overlay { position: absolute; left: 10px; bottom: 10px; background: rgba(0, 0, 0, 0.6); padding: 4px 8px; border-radius: 4px; font-size: 12px; color: #fff; pointer-events: none; z-index: 10; font-variant-numeric: tabular-nums; }
+        #progress-container { flex-shrink: 0; padding: 10px 12px; background: #1e1e1e; touch-action: none; }
+        #progress-bar { position: relative; width: 100%; height: 8px; background: #444; border-radius: 4px; }
+        #progress-fill { position: absolute; left: 0; top: 0; height: 100%; background: #007aff; border-radius: 4px; width: 0%; pointer-events: none; }
+        .marker-dot { position: absolute; top: 50%; transform: translate(-50%, -50%); width: 10px; height: 10px; border-radius: 50%; border: 1px solid #fff; pointer-events: none; }
+        #controls-row { display: flex; gap: 10px; padding: 0 12px 10px 12px; background: #1e1e1e; flex-shrink: 0; }
         
-        #play-indicator {
-            position: absolute;
-            font-size: 48px;
-            color: rgba(255,255,255,0.7);
-            opacity: 0;
-            transition: opacity 0.2s;
-            pointer-events: none;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-        }
-
-        /* 영상 재생시간 표시 (좌측 하단) */
-        #time-overlay {
-            position: absolute;
-            left: 10px;
-            bottom: 10px;
-            background: rgba(0, 0, 0, 0.6);
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            color: #fff;
-            pointer-events: none;
-            z-index: 10;
-            font-variant-numeric: tabular-nums;
-        }
-
-        /* 진행률 바 */
-        #progress-container {
-            flex-shrink: 0;
-            padding: 10px 12px;
-            background: #1e1e1e;
-            touch-action: none;
-        }
-        #progress-bar {
-            position: relative;
-            width: 100%;
-            height: 8px;
-            background: #444;
-            border-radius: 4px;
-        }
-        #progress-fill {
-            position: absolute;
-            left: 0; top: 0; height: 100%;
-            background: #007aff;
-            border-radius: 4px;
-            width: 0%;
-            pointer-events: none;
-        }
-        .marker-dot {
-            position: absolute;
-            top: 50%; transform: translate(-50%, -50%);
-            width: 10px; height: 10px;
-            border-radius: 50%; border: 1px solid #fff;
-            pointer-events: none;
-        }
-
-        /* 하단 컨트롤 영역 */
-        #controls-row {
-            display: flex;
-            gap: 10px;
-            padding: 0 12px 10px 12px;
-            background: #1e1e1e;
-            flex-shrink: 0;
-        }
-        .btn {
-            flex: 1;
-            padding: 10px 0;
-            text-align: center;
-            background: #333;
-            color: #fff;
-            border: none;
-            border-radius: 6px;
-            font-size: 13px;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-            white-space: nowrap;
-        }
+        .btn { flex: 1; padding: 10px 0; text-align: center; background: #333; color: #fff; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; text-decoration: none; display: inline-block; white-space: nowrap; }
         .btn-primary { background: #007aff; }
 
-        /* 마커 패널 영역 */
-        #marker-pad-wrapper {
-            flex-shrink: 0;
-            background: #121212;
-            /* 하단 Safe Area 적용 (아이폰 홈 인디케이터 겹침 방지) */
-            padding: 10px 0 calc(10px + env(safe-area-inset-bottom)) 0;
-        }
-        #marker-pages {
-            display: flex;
-            overflow-x: auto;
-            scroll-snap-type: x mandatory;
-            scrollbar-width: none; 
-        }
+        #marker-pad-wrapper { flex-shrink: 0; background: #121212; padding: 10px 0 calc(10px + env(safe-area-inset-bottom)) 0; }
+        #marker-pages { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
         #marker-pages::-webkit-scrollbar { display: none; } 
-        .marker-page {
-            flex: 0 0 100%;
-            scroll-snap-align: start;
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            grid-template-rows: repeat(2, 1fr);
-            gap: 8px;
-            padding: 0 12px;
-        }
-        .marker-btn {
-            background: #2c2c2e;
-            border: 2px solid transparent;
-            border-radius: 8px;
-            color: white;
-            font-size: 13px;
-            padding: 15px 5px;
-            text-align: center;
-            cursor: pointer;
-            word-break: break-word;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 50px;
-            transition: opacity 0.2s;
-        }
+        .marker-page { flex: 0 0 100%; scroll-snap-align: start; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); gap: 8px; padding: 0 12px; }
+        .marker-btn { background: #2c2c2e; border: 2px solid transparent; border-radius: 8px; color: white; font-size: 13px; padding: 15px 5px; text-align: center; cursor: pointer; word-break: break-word; display: flex; align-items: center; justify-content: center; min-height: 50px; transition: opacity 0.2s; }
         .marker-btn.empty { background: transparent; border: 1px dashed #444; pointer-events: none; }
         .marker-btn.disabled { opacity: 0.3; pointer-events: none; }
-
         #page-indicators { text-align: center; margin-top: 8px; }
-        .dot {
-            display: inline-block; width: 6px; height: 6px; background: #555;
-            border-radius: 50%; margin: 0 4px;
-        }
+        .dot { display: inline-block; width: 6px; height: 6px; background: #555; border-radius: 50%; margin: 0 4px; }
         .dot.active { background: #fff; }
 
-        /* 마커 기록 목록 */
-        #marker-list-container {
-            flex: 1 1 100px;
-            overflow-y: auto;
-            background: #1e1e1e;
-            padding: 10px 12px;
-            touch-action: pan-y; 
-        }
-        .record-item {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 10px; background: #2c2c2e; border-radius: 6px;
-            margin-bottom: 8px; font-size: 13px; cursor: pointer; 
-        }
+        #marker-list-container { flex: 1 1 100px; overflow-y: auto; background: #1e1e1e; padding: 10px 12px; touch-action: pan-y; }
+        .record-item { display: flex; align-items: center; justify-content: space-between; padding: 10px; background: #2c2c2e; border-radius: 6px; margin-bottom: 8px; font-size: 13px; cursor: pointer; }
         .record-item:active { background: #3a3a3c; } 
         .record-time { font-weight: bold; width: 60px; color: #aaa; }
         .record-info { flex: 1; display: flex; align-items: center; gap: 8px; margin: 0 10px; }
         .record-color { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
-        .record-actions button {
-            background: #444; border: none; color: white; padding: 5px 8px;
-            border-radius: 4px; font-size: 11px; margin-left: 5px; cursor: pointer;
-        }
+        .record-actions button { background: #444; border: none; color: white; padding: 5px 8px; border-radius: 4px; font-size: 11px; margin-left: 5px; cursor: pointer; }
 
-        /* 하단 액션 바 */
-        footer {
-            display: flex; gap: 10px; padding: 10px 12px;
-            background: #121212; flex-shrink: 0; border-top: 1px solid #333;
-        }
+        footer { display: flex; gap: 10px; padding: 10px 12px; background: #121212; flex-shrink: 0; border-top: 1px solid #333; }
         
         /* 모달 */
-        #modal-overlay {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.8); z-index: 1000;
-            display: none; align-items: center; justify-content: center;
-        }
-        .modal-content {
-            background: #1e1e1e; padding: 20px; border-radius: 12px;
-            width: 90%; max-width: 400px; max-height: 80vh; overflow-y: auto;
-        }
+        #modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1000; display: none; align-items: center; justify-content: center; }
+        .modal-content { background: #1e1e1e; padding: 20px; border-radius: 12px; width: 90%; max-width: 400px; max-height: 80vh; overflow-y: auto; }
         .modal-title { margin-bottom: 15px; font-size: 16px; }
         .modal-close { margin-top: 15px; width: 100%; }
         .edit-marker-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
         .edit-marker-row input[type="text"] { flex: 1; padding: 8px; border-radius: 4px; border: 1px solid #444; background: #333; color: white; font-size: 14px; }
         .edit-marker-row input[type="color"] { width: 40px; height: 40px; padding: 0; border: none; border-radius: 4px; }
         .add-marker-btn { width: 100%; padding: 10px; background: #007aff; border: none; color: white; border-radius: 6px; margin-bottom: 15px;}
+
+        /* ------ 열람(View) 화면 전용 스타일 ------ */
+        #view-read {
+            background-color: #121212;
+        }
+        .read-settings {
+            display: flex; flex-wrap: wrap; gap: 12px; padding: 15px 12px;
+            background: #1e1e1e; border-bottom: 1px solid #333; flex-shrink: 0;
+            align-items: center; font-size: 13px;
+        }
+        .setting-group {
+            display: flex; align-items: center; gap: 6px;
+        }
+        .setting-group select, .setting-group input[type="text"] {
+            background: #333; color: #fff; border: 1px solid #444; 
+            padding: 6px; border-radius: 4px; font-size: 13px; outline: none;
+        }
+        .setting-group input[type="checkbox"] {
+            width: 16px; height: 16px; accent-color: #007aff; cursor: pointer;
+        }
+        #read-list-container {
+            flex: 1; overflow-y: auto; padding: 12px; background: #121212; touch-action: pan-y;
+        }
+        .read-item {
+            background: #1e1e1e; border-radius: 8px; padding: 12px; margin-bottom: 12px;
+            display: flex; flex-direction: column; gap: 8px; border-left: 4px solid transparent;
+            transition: opacity 0.2s;
+        }
+        .read-item.completed { opacity: 0.4; }
+        .read-item-top {
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .read-item-left {
+            display: flex; align-items: center; gap: 8px;
+        }
+        .complete-checkbox {
+            width: 18px; height: 18px; accent-color: #34c759; cursor: pointer;
+        }
+        .read-time-display { font-size: 15px; font-weight: bold; font-variant-numeric: tabular-nums; }
+        .read-item-mid { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+        .read-item-bottom {
+            background: #2c2c2e; padding: 8px 10px; border-radius: 4px; 
+            font-size: 13px; color: #ccc; word-break: break-all;
+        }
+        .empty-read-msg {
+            text-align: center; color: #666; margin-top: 40px; font-size: 14px;
+        }
     </style>
 </head>
 <body>
     <header>
         <div class="title-area">
-            <div id="project-title">Proxy Marker v1.3 <span id="offline-badge" style="display:none; font-size:10px; color:#ffcc00; margin-left:5px;">(Offline)</span></div>
+            <div id="project-title">Proxy Marker v1.4.1 <span id="offline-badge" style="display:none; font-size:10px; color:#ffcc00; margin-left:5px;">(Offline)</span></div>
             <div id="creator-credit">Created by yomaLapin</div>
         </div>
         <div class="header-actions">
@@ -312,7 +223,14 @@
         </div>
     </header>
 
-    <div class="app-body">
+    <!-- 화면 전환 탭 메뉴 -->
+    <div id="tab-menu">
+        <button id="btn-tab-check" class="tab-btn active">체크 (기록)</button>
+        <button id="btn-tab-read" class="tab-btn">열람 (확인)</button>
+    </div>
+
+    <!-- [기존 화면] 체크 (기록) 영역 -->
+    <div id="view-check" class="app-body active-view">
         <div class="panel-left">
             <div id="video-container">
                 <video id="video-player" playsinline></video>
@@ -347,7 +265,6 @@
         </div>
 
         <div class="panel-right">
-            <!-- 마커 리스트와 마커 버튼 영역 위치 교체 (DOM 구조 반영) -->
             <div id="marker-list-container">
                 <div id="marker-list"></div>
             </div>
@@ -356,6 +273,43 @@
                 <div id="marker-pages"></div>
                 <div id="page-indicators"></div>
             </div>
+        </div>
+    </div>
+
+    <!-- [열람 (확인) 화면 영역] -->
+    <div id="view-read" class="app-body">
+        <div class="read-settings">
+            <div class="setting-group">
+                <label for="read-sort">정렬:</label>
+                <select id="read-sort">
+                    <option value="desc" selected>최신순 (마지막→처음)</option>
+                    <option value="asc">기록순 (처음→마지막)</option>
+                </select>
+            </div>
+            <div class="setting-group" style="margin-left: auto;">
+                <input type="checkbox" id="read-resolve-mode">
+                <label for="read-resolve-mode" style="font-weight: bold;">Resolve 타임코드</label>
+            </div>
+            <div class="setting-group">
+                <label for="read-fps">FPS:</label>
+                <select id="read-fps" disabled>
+                    <option value="23.976">23.976 (NDF)</option>
+                    <option value="24">24</option>
+                    <option value="25">25</option>
+                    <option value="29.97">29.97 (NDF)</option>
+                    <option value="30">30</option>
+                    <option value="50">50</option>
+                    <option value="59.94">59.94 (NDF)</option>
+                    <option value="60" selected>60</option>
+                </select>
+            </div>
+            <div class="setting-group">
+                <label for="read-start-tc">시작 TC:</label>
+                <input type="text" id="read-start-tc" value="01:00:00:00" placeholder="01:00:00:00" style="width: 85px;" disabled>
+            </div>
+        </div>
+        <div id="read-list-container">
+            <!-- 마커 리스트 동적 생성 -->
         </div>
     </div>
 
@@ -370,7 +324,6 @@
     </div>
 
     <script>
-        // 네트워크 상태 감지
         const offlineBadge = document.getElementById('offline-badge');
         function updateOnlineStatus() {
             if (!navigator.onLine) {
@@ -381,9 +334,9 @@
         }
         window.addEventListener('online', updateOnlineStatus);
         window.addEventListener('offline', updateOnlineStatus);
-        updateOnlineStatus(); // 초기 로드 시 감지
+        updateOnlineStatus();
 
-        // --- 기존 v1.2 로직 유지 ---
+        // --- 데이터 구조 ---
         const defaultMarkers = [
             { id: 1, name: '인점', color: '#ff3b30' },
             { id: 2, name: '아웃점', color: '#007aff' },
@@ -441,6 +394,7 @@
             });
         }
 
+        // --- DOM Elements ---
         const video = document.getElementById('video-player');
         const videoContainer = document.getElementById('video-container');
         const fileInput = document.getElementById('video-upload');
@@ -458,6 +412,16 @@
         const fullscreenBtn = document.getElementById('fullscreen-btn');
         const playIndicator = document.getElementById('play-indicator');
         const timeOverlay = document.getElementById('time-overlay');
+
+        const btnTabCheck = document.getElementById('btn-tab-check');
+        const btnTabRead = document.getElementById('btn-tab-read');
+        const viewCheck = document.getElementById('view-check');
+        const viewRead = document.getElementById('view-read');
+        const readSortSelect = document.getElementById('read-sort');
+        const readResolveMode = document.getElementById('read-resolve-mode');
+        const readFpsSelect = document.getElementById('read-fps');
+        const readStartTcInput = document.getElementById('read-start-tc');
+        const readListContainer = document.getElementById('read-list-container');
 
         async function initApp() {
             try {
@@ -486,7 +450,7 @@
                     }
                     if (parsed.records && parsed.records.length > 0) {
                         window.legacyRecords = parsed.records;
-                        alert("v1.1의 마커 기록이 발견되었습니다. 복원하시려면 기록과 연결할 영상을 먼저 불러와주세요.");
+                        alert("이전 버전의 마커 기록이 발견되었습니다. 영상 불러오기 시 연결 가능합니다.");
                     } else if (migratedMarkers) {
                         localStorage.removeItem('proxyMarkerState');
                     }
@@ -498,8 +462,15 @@
 
         async function loadGlobalSettings() {
             const settings = await dbGet('settings', 'global');
-            if (settings && settings.markers) {
-                state.markers = settings.markers;
+            if (settings) {
+                if (settings.markers) {
+                    state.markers = settings.markers;
+                } else {
+                    state.markers = JSON.parse(JSON.stringify(defaultMarkers));
+                }
+                if (settings.fps) {
+                    readFpsSelect.value = settings.fps;
+                }
             } else {
                 state.markers = JSON.parse(JSON.stringify(defaultMarkers));
                 await saveGlobalSettings();
@@ -507,7 +478,8 @@
         }
 
         async function saveGlobalSettings() {
-            await dbPut('settings', { id: 'global', markers: state.markers });
+            const currentFps = readFpsSelect.value;
+            await dbPut('settings', { id: 'global', markers: state.markers, fps: currentFps });
         }
 
         async function loadProject(id) {
@@ -572,13 +544,13 @@
                     await loadProject(currentVideoId);
 
                     if (window.legacyRecords) {
-                        if (confirm("이전에 작업하던 v1.1 마커 기록이 존재합니다. 이 영상(프로젝트)에 연결하시겠습니까?")) {
+                        if (confirm("이전에 작업하던 마커 기록이 존재합니다. 이 영상(프로젝트)에 연결하시겠습니까?")) {
                             state.records = window.legacyRecords;
                             delete window.legacyRecords;
                             localStorage.removeItem('proxyMarkerState');
                             await saveProject();
                         } else {
-                            if(confirm("기존 v1.1 기록을 삭제하시겠습니까? (취소 시 다음 영상 선택 시 다시 묻습니다)")) {
+                            if(confirm("기존 기록을 삭제하시겠습니까?")) {
                                 delete window.legacyRecords;
                                 localStorage.removeItem('proxyMarkerState');
                             }
@@ -590,6 +562,10 @@
                     updateMarkerState();
                     updatePlayIndicator();
                     updateTimeOverlay();
+                    
+                    if (viewRead.classList.contains('active-view')) {
+                        renderReadView();
+                    }
                 };
             }
             e.target.value = ''; 
@@ -647,20 +623,18 @@
             speedBtn.innerText = `×${newSpeed}`;
         });
 
+        // --- 비디오 스와이프 제어 ---
         let touchStartX = 0;
         let touchStartTime = 0;
         let isSwiping = false;
-
         videoContainer.addEventListener('touchstart', (e) => {
             touchStartX = e.touches[0].clientX;
             touchStartTime = video.currentTime;
             isSwiping = false;
         });
-
         videoContainer.addEventListener('touchmove', (e) => {
             const currentX = e.touches[0].clientX;
             const diffX = currentX - touchStartX;
-            
             if (Math.abs(diffX) > 20) {
                 isSwiping = true;
                 if (!video.duration) return;
@@ -670,7 +644,6 @@
                 video.currentTime = newTime;
             }
         });
-
         videoContainer.addEventListener('touchend', (e) => {
             if (!isSwiping && video.src) {
                 if (video.paused) { video.play(); } else { video.pause(); }
@@ -686,7 +659,6 @@
             video.currentTime = pos * video.duration;
             updateTimeOverlay();
         }
-
         progressContainer.addEventListener('mousedown', (e) => {
             handleProgressInteract(e);
             const onMouseMove = (e) => handleProgressInteract(e);
@@ -697,13 +669,8 @@
             document.addEventListener('mousemove', onMouseMove);
             document.addEventListener('mouseup', onMouseUp);
         });
-
-        progressContainer.addEventListener('touchstart', (e) => {
-            handleProgressInteract(e);
-        }, {passive: true});
-        progressContainer.addEventListener('touchmove', (e) => {
-            handleProgressInteract(e);
-        }, {passive: true});
+        progressContainer.addEventListener('touchstart', handleProgressInteract, {passive: true});
+        progressContainer.addEventListener('touchmove', handleProgressInteract, {passive: true});
 
         function renderProgressDots() {
             dotsContainer.innerHTML = '';
@@ -729,40 +696,31 @@
             for (let p = 0; p < totalPages; p++) {
                 const pageDiv = document.createElement('div');
                 pageDiv.className = 'marker-page';
-                
                 for (let i = 0; i < itemsPerPage; i++) {
                     const markerIdx = p * itemsPerPage + i;
                     const btn = document.createElement('div');
-                    
                     if (markerIdx < totalMarkers) {
                         const markerInfo = state.markers[markerIdx];
                         btn.className = 'marker-btn';
                         btn.style.borderColor = markerInfo.color;
                         btn.innerText = markerInfo.name;
-                        
-                        btn.addEventListener('click', () => {
-                            addRecord(markerInfo);
-                        });
+                        btn.addEventListener('click', () => { addRecord(markerInfo); });
                     } else {
                         btn.className = 'marker-btn empty';
                     }
                     pageDiv.appendChild(btn);
                 }
                 markerPages.appendChild(pageDiv);
-
                 const dot = document.createElement('span');
                 dot.className = 'dot' + (p === 0 ? ' active' : '');
                 pageIndicators.appendChild(dot);
             }
             updateMarkerState();
         }
-
         markerPages.addEventListener('scroll', () => {
             const pageIndex = Math.round(markerPages.scrollLeft / markerPages.clientWidth);
             const dots = pageIndicators.querySelectorAll('.dot');
-            dots.forEach((dot, idx) => {
-                dot.classList.toggle('active', idx === pageIndex);
-            });
+            dots.forEach((dot, idx) => { dot.classList.toggle('active', idx === pageIndex); });
         });
 
         async function addRecord(markerInfo) {
@@ -774,7 +732,8 @@
                 markerId: markerInfo.id,
                 name: markerInfo.name,
                 color: markerInfo.color,
-                note: ''
+                note: '',
+                isCompleted: false 
             };
             state.records.push(record);
             state.records.sort((a, b) => a.time - b.time);
@@ -789,7 +748,6 @@
             state.records.forEach(record => {
                 const item = document.createElement('div');
                 item.className = 'record-item';
-                
                 item.innerHTML = `
                     <div class="record-time">${formatTime(record.time)}</div>
                     <div class="record-info">
@@ -802,14 +760,12 @@
                         <button onclick="event.stopPropagation(); deleteRecord(${record.id})">삭제</button>
                     </div>
                 `;
-                
                 item.addEventListener('click', () => {
                     if (!video.src || video.readyState === 0) return;
                     video.currentTime = record.time;
                     video.pause();
                     updateTimeOverlay();
                 });
-
                 markerList.appendChild(item);
             });
             markerList.parentElement.scrollTop = markerList.parentElement.scrollHeight;
@@ -823,6 +779,7 @@
                     record.note = newNote.trim();
                     await saveProject();
                     renderMarkerList();
+                    if (viewRead.classList.contains('active-view')) renderReadView();
                 }
             }
         };
@@ -832,32 +789,27 @@
             await saveProject();
             renderMarkerList();
             renderProgressDots();
+            if (viewRead.classList.contains('active-view')) renderReadView();
         };
 
+        // [v1.4.1 수정] 리셋 버튼 기능 - 백틱(`)을 사용하여 안전한 줄바꿈 처리로 수정
         resetBtn.addEventListener('click', async () => {
-            if (!currentVideoId) {
-                alert("선택된 영상이 없습니다.");
-                return;
-            }
-            if (confirm('현재 영상의 모든 마커 기록이 초기화됩니다. 계속하시겠습니까?\n(다른 영상의 기록과 공통 설정은 보존됩니다)')) {
+            if (!currentVideoId) { alert("선택된 영상이 없습니다."); return; }
+            
+            if (confirm(`현재 영상에 기록된 모든 마커가 삭제됩니다.\n(※ 불러온 영상 및 현재 재생 위치는 유지됩니다)\n\n정말 초기화하시겠습니까?`)) {
+                // 배열 초기화
                 state.records = [];
+                // DB에 즉시 빈 배열로 덮어쓰기
                 await saveProject();
                 
-                video.removeAttribute('src');
-                video.load(); 
-                fileInput.value = '';
-                currentVideoId = null;
-                currentVideoInfo = null;
-
-                videoPlaceholder.style.display = 'block';
-                videoPlaceholder.innerHTML = "영상을 다시 불러와주세요.";
-                progressFill.style.width = '0%';
-                
+                // 마커 목록 및 프로그레스 바 마커 점 UI 업데이트
                 renderMarkerList();
                 renderProgressDots();
-                updateMarkerState();
-                updatePlayIndicator();
-                updateTimeOverlay();
+                
+                // 열람 화면이 활성화되어 있다면 열람 화면 리스트도 비우기
+                if (viewRead.classList.contains('active-view')) {
+                    renderReadView();
+                }
             }
         });
 
@@ -886,7 +838,7 @@
                         updatedAt: new Date().toISOString()
                     });
 
-                    if (data.markers && confirm("백업 파일의 공통 마커 설정(이름/색상)을 현재 환경에 덮어쓰시겠습니까?")) {
+                    if (data.markers && confirm("백업 파일의 공통 마커 설정(이름/색상)을 덮어쓰시겠습니까?")) {
                         state.markers = data.markers;
                         await saveGlobalSettings();
                         renderMarkerPad();
@@ -896,9 +848,10 @@
                         state.records = recs;
                         renderMarkerList();
                         renderProgressDots();
+                        if (viewRead.classList.contains('active-view')) renderReadView();
                         alert("현재 화면에 복원된 데이터가 적용되었습니다.");
                     } else {
-                        alert("데이터가 시스템에 보관되었습니다. 해당 영상을 불러오면 자동으로 연결됩니다.");
+                        alert("데이터가 보관되었습니다. 해당 영상을 불러오면 연결됩니다.");
                     }
                 } catch(err) {
                     alert("백업 파일 읽기 실패: " + err.message);
@@ -913,15 +866,9 @@
             
             const payload = {
                 format: "ProxyMarkerBackup",
-                version: "1.3",
+                version: "1.4.1", 
                 exportedAt: new Date().toISOString(),
-                video: {
-                    id: currentVideoId,
-                    name: currentVideoInfo.name,
-                    size: currentVideoInfo.size,
-                    lastModified: currentVideoInfo.lastModified,
-                    duration: currentVideoInfo.duration
-                },
+                video: { id: currentVideoId, name: currentVideoInfo.name, size: currentVideoInfo.size, lastModified: currentVideoInfo.lastModified, duration: currentVideoInfo.duration },
                 markers: state.markers,
                 records: state.records
             };
@@ -956,6 +903,7 @@
             }
         });
 
+        // --- 모달 설정 ---
         const manageBtn = document.getElementById('manage-markers');
         const modalOverlay = document.getElementById('modal-overlay');
         const closeModalBtn = document.getElementById('close-modal-btn');
@@ -986,20 +934,145 @@
                 markerEditList.appendChild(row);
             });
         }
-
         window.updateMarkerName = (idx, val) => { state.markers[idx].name = val; };
         window.updateMarkerColor = (idx, val) => { state.markers[idx].color = val; };
-        window.removeMarkerType = (idx) => {
-            state.markers.splice(idx, 1);
-            renderMarkerEditModal();
-        };
-
+        window.removeMarkerType = (idx) => { state.markers.splice(idx, 1); renderMarkerEditModal(); };
         addMarkerBtn.addEventListener('click', () => {
             state.markers.push({ id: Date.now(), name: '새 마커', color: '#888888' });
             renderMarkerEditModal();
         });
 
-        // PWA 서비스 워커 등록 로직
+
+        /* ======================================================================
+           열람(View) 화면 전용 기능 및 로직
+           ====================================================================== */
+
+        // 탭 메뉴 클릭 이벤트
+        btnTabCheck.addEventListener('click', () => {
+            btnTabCheck.classList.add('active');
+            btnTabRead.classList.remove('active');
+            viewCheck.classList.add('active-view');
+            viewRead.classList.remove('active-view');
+        });
+
+        btnTabRead.addEventListener('click', () => {
+            btnTabRead.classList.add('active');
+            btnTabCheck.classList.remove('active');
+            viewRead.classList.add('active-view');
+            viewCheck.classList.remove('active-view');
+            
+            renderReadView();
+        });
+
+        readResolveMode.addEventListener('change', (e) => {
+            const isChecked = e.target.checked;
+            readFpsSelect.disabled = !isChecked;
+            readStartTcInput.disabled = !isChecked;
+            renderReadView();
+        });
+
+        readSortSelect.addEventListener('change', renderReadView);
+        
+        // [v1.4.1 수정] FPS 변경 시 데이터베이스 설정에 즉시 저장
+        readFpsSelect.addEventListener('change', async () => {
+            await saveGlobalSettings();
+            renderReadView();
+        });
+        
+        readStartTcInput.addEventListener('input', renderReadView);
+
+        function parseTimecodeToFrames(tcStr, baseFps) {
+            const parts = tcStr.split(':');
+            if (parts.length !== 4) return 0;
+            const h = parseInt(parts[0], 10) || 0;
+            const m = parseInt(parts[1], 10) || 0;
+            const s = parseInt(parts[2], 10) || 0;
+            const f = parseInt(parts[3], 10) || 0;
+            return ((h * 3600) + (m * 60) + s) * baseFps + f;
+        }
+
+        function calculateResolveTimecode(seconds, fpsFloat, startTcStr) {
+            if (isNaN(seconds)) return "00:00:00:00";
+            
+            const baseFps = Math.round(fpsFloat);
+            const startFrames = parseTimecodeToFrames(startTcStr, baseFps);
+            
+            const videoFrames = Math.floor(seconds * fpsFloat); 
+            const totalFrames = startFrames + videoFrames;
+
+            const h = Math.floor(totalFrames / (baseFps * 3600));
+            const m = Math.floor((totalFrames % (baseFps * 3600)) / (baseFps * 60));
+            const s = Math.floor((totalFrames % (baseFps * 60)) / baseFps);
+            const f = totalFrames % baseFps;
+
+            const pad = (num) => num.toString().padStart(2, '0');
+            return `${pad(h)}:${pad(m)}:${pad(s)}:${pad(f)}`;
+        }
+
+        function renderReadView() {
+            readListContainer.innerHTML = '';
+            
+            if (state.records.length === 0) {
+                readListContainer.innerHTML = '<div class="empty-read-msg">기록된 마커가 없습니다.<br>체크 탭에서 영상을 재생하고 마커를 기록해보세요.</div>';
+                return;
+            }
+
+            const sortOrder = readSortSelect.value;
+            const isResolveMode = readResolveMode.checked;
+            const fpsFloat = parseFloat(readFpsSelect.value);
+            const startTcStr = readStartTcInput.value;
+
+            let sortedRecords = [...state.records];
+            if (sortOrder === 'desc') {
+                sortedRecords.sort((a, b) => b.time - a.time); 
+            } else {
+                sortedRecords.sort((a, b) => a.time - b.time); 
+            }
+
+            sortedRecords.forEach((record, index) => {
+                const isCompleted = record.isCompleted || false; 
+                
+                const timeString = isResolveMode 
+                    ? calculateResolveTimecode(record.time, fpsFloat, startTcStr)
+                    : formatTime(record.time);
+
+                const item = document.createElement('div');
+                item.className = 'read-item ' + (isCompleted ? 'completed' : '');
+                item.style.borderLeftColor = record.color;
+
+                item.innerHTML = `
+                    <div class="read-item-top">
+                        <div class="read-item-left">
+                            <input type="checkbox" class="complete-checkbox" ${isCompleted ? 'checked' : ''} data-id="${record.id}">
+                            <span class="read-time-display">${timeString}</span>
+                        </div>
+                    </div>
+                    <div class="read-item-mid">
+                        <span class="record-color" style="background-color:${record.color}"></span>
+                        <strong>${record.name}</strong>
+                    </div>
+                    ${record.note ? `<div class="read-item-bottom">${record.note}</div>` : ''}
+                `;
+
+                const checkbox = item.querySelector('.complete-checkbox');
+                checkbox.addEventListener('change', async (e) => {
+                    const rec = state.records.find(r => r.id === record.id);
+                    if (rec) {
+                        rec.isCompleted = e.target.checked;
+                        await saveProject();
+                        
+                        if (rec.isCompleted) {
+                            item.classList.add('completed');
+                        } else {
+                            item.classList.remove('completed');
+                        }
+                    }
+                });
+
+                readListContainer.appendChild(item);
+            });
+        }
+
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
@@ -1008,7 +1081,6 @@
             });
         }
 
-        // 앱 시작
         initApp();
     </script>
 </body>

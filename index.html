@@ -1148,7 +1148,9 @@
                     }
                 });
 
-                navigator.serviceWorker.register('./sw.js')
+                navigator.serviceWorker.register('./sw.js', {
+                    scope: './'
+                })
                     .then(reg => {
                         console.log('Service Worker 등록 완료:', reg.scope);
                         

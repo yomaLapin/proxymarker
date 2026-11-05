@@ -1,10 +1,10 @@
 {
     "id": "https://yomalapin.github.io/proxymarker/",
-    "scope": "/proxymarker/",
+    "scope": "https://yomalapin.github.io/proxymarker/",
     "name": "Proxy Marker v1.4.2",
     "short_name": "ProxyMarker",
     "description": "오프라인 환경을 지원하는 영상 프록시 마커 기록기",
-    "start_url": "/proxymarker/",
+    "start_url": "https://yomalapin.github.io/proxymarker/",
     "display": "standalone",
     "background_color": "#121212",
     "theme_color": "#121212",

@@ -1148,8 +1148,8 @@
                     }
                 });
 
-                navigator.serviceWorker.register('./sw.js', {
-                    scope: './'
+                navigator.serviceWorker.register('/proxymarker/sw.js', {
+                    scope: '/proxymarker/'
                 })
                     .then(reg => {
                         console.log('Service Worker 등록 완료:', reg.scope);

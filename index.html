@@ -213,45 +213,9 @@
         .empty-read-msg {
             text-align: center; color: #666; margin-top: 40px; font-size: 14px;
         }
-        
-        /* 업데이트 알림 토스트 스타일 (모바일 하단 안전영역 및 변형 보정) */
-        #update-toast {
-            position: fixed;
-            bottom: calc(20px + env(safe-area-inset-bottom));
-            left: 50%;
-            transform: translate(-50%, 200%); /* 기본 숨김: 화면 밖 완전 이탈 */
-            opacity: 0;
-            visibility: hidden;
-            background-color: #34c759;
-            color: #fff;
-            padding: 12px 24px;
-            border-radius: 30px;
-            font-size: 14px;
-            font-weight: bold;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.4);
-            transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.27), opacity 0.25s, background-color 0.2s;
-            z-index: 9999;
-            pointer-events: auto; 
-            cursor: pointer;
-            text-align: center;
-            line-height: 1.4;
-            max-width: 90vw;
-            word-break: keep-all;
-        }
-        #update-toast:hover {
-            background-color: #2eb150;
-        }
-        #update-toast.show {
-            transform: translate(-50%, 0); /* 등장: 안전 영역 위에 정상 배치 */
-            opacity: 1;
-            visibility: visible;
-        }
     </style>
 </head>
 <body>
-    <!-- PWA 업데이트 알림 토스트 -->
-    <div id="update-toast">새로운 버전이 준비되었습니다.<br>클릭하여 업데이트 하세요.</div>
-
     <header>
         <div class="title-area">
             <div id="project-title">Proxy Marker v1.4.2 <span id="offline-badge" style="display:none; font-size:10px; color:#ffcc00; margin-left:5px;">(Offline)</span></div>
@@ -1139,55 +1103,13 @@
             });
         }
 
-        // --- PWA Service Worker 등록 및 업데이트 로직 ---
+        // --- PWA Service Worker 기본 등록 ---
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                let refreshing = false;
-                
-                // 업데이트 적용 후 한 번만 새로고침 처리
-                navigator.serviceWorker.addEventListener('controllerchange', () => {
-                    if (!refreshing) {
-                        refreshing = true;
-                        window.location.reload();
-                    }
-                });
-
-                navigator.serviceWorker.register('/proxymarker/sw.js', {
-                    scope: '/proxymarker/'
-                })
-                    .then(reg => {
-                        console.log('Service Worker 등록 완료:', reg.scope);
-                        
-                        // 기존 구버전에서 다운로드가 완료되어 대기 중인 워커가 있는 경우
-                        if (reg.waiting) {
-                            showUpdateToast(reg.waiting);
-                        }
-                        
-                        // 실행 중 새 업데이트 설치가 감지된 경우
-                        reg.addEventListener('updatefound', () => {
-                            const newWorker = reg.installing;
-                            newWorker.addEventListener('statechange', () => {
-                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                    showUpdateToast(newWorker);
-                                }
-                            });
-                        });
-                    })
+                navigator.serviceWorker.register('/proxymarker/sw.js', { scope: '/proxymarker/' })
+                    .then(reg => console.log('Service Worker 등록 완료:', reg.scope))
                     .catch(err => console.log('Service Worker 등록 실패:', err));
             });
-        }
-        
-        // 업데이트 알림 토스트 띄우기 및 수동 클릭 시 적용
-        function showUpdateToast(worker) {
-            const toast = document.getElementById('update-toast');
-            toast.innerHTML = '새로운 버전이 준비되었습니다.<br>클릭하여 업데이트를 적용하세요.';
-            toast.classList.add('show');
-            
-            toast.addEventListener('click', () => {
-                toast.classList.remove('show');
-                // 서비스 워커에 skipWaiting 메시지를 보내어 활성화시킴
-                worker.postMessage({ action: 'skipWaiting' });
-            }, { once: true });
         }
 
         initApp();

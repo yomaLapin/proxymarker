@@ -217,28 +217,34 @@
         /* 업데이트 알림 토스트 스타일 */
         #update-toast {
             position: fixed;
-            bottom: -100px;
+            bottom: -150px; /* 완전히 화면 밖에 숨어있게 여유 확보 */
             left: 50%;
             transform: translateX(-50%);
             background-color: #34c759;
             color: #fff;
-            padding: 12px 20px;
+            padding: 14px 24px;
             border-radius: 30px;
             font-size: 14px;
             font-weight: bold;
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            transition: bottom 0.4s ease-in-out, background-color 0.2s;
+            /* 등장 시 살짝 통통 튀는 느낌을 주는 애니메이션 추가 */
+            transition: bottom 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.2s;
             z-index: 9999;
             pointer-events: auto; 
             cursor: pointer;
             text-align: center;
-            line-height: 1.4;
+            line-height: 1.5;
+            /* 텍스트 길이와 기기 폭에 맞게 자동 조절 및 잘림 방지 */
+            width: max-content;
+            max-width: 90vw;
+            word-break: keep-all;
         }
         #update-toast:hover {
             background-color: #2eb150;
         }
         #update-toast.show {
-            bottom: 30px;
+            /* 하단 제스처 바 및 기기 안전 영역을 고려하여 여유 있는 높이 확보 */
+            bottom: calc(40px + env(safe-area-inset-bottom, 20px));
         }
     </style>
 </head>
@@ -1177,7 +1183,7 @@
         // 업데이트 알림 토스트 띄우기 및 수동 클릭 시 적용
         function showUpdateToast(worker) {
             const toast = document.getElementById('update-toast');
-            toast.innerHTML = '새로운 버전이 준비되었습니다(v1.4.2).<br>클릭하여 업데이트를 적용하세요.';
+            toast.innerHTML = '새로운 버전이 준비되었습니다.<br>클릭하여 업데이트를 적용하세요.';
             toast.classList.add('show');
             
             toast.addEventListener('click', () => {

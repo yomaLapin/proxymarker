@@ -117,7 +117,6 @@
         #video-container { order: 1; }
         #progress-container { order: 2; }
         #controls-row { order: 3; }
-        footer { order: 4; }
         #marker-list-container { order: 5; flex: 1 1 100px; }
         #marker-pad-wrapper { order: 6; }
 
@@ -127,14 +126,13 @@
             .panel-left { display: flex; flex-direction: column; width: 55%; border-right: 1px solid #333; }
             .panel-right { display: flex; flex-direction: column; width: 45%; background: #121212; }
             
-            #video-container, #progress-container, #controls-row, footer,
+            #video-container, #progress-container, #controls-row,
             #marker-pad-wrapper, #marker-list-container { order: unset; }
 
 
             #video-container { flex: 1 1 auto; }
             #progress-container { flex-shrink: 0; }
-            #controls-row { flex-shrink: 0; }
-            footer { flex-shrink: 0; border-top: none; padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
+            #controls-row { flex-shrink: 0; border-top: none; padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
 
 
             #marker-pad-wrapper { flex-shrink: 0; }
@@ -167,10 +165,25 @@
         #seek-offset { font-size: 22px; font-weight: bold; font-variant-numeric: tabular-nums; white-space: nowrap; }
         #seek-target { font-size: 12px; color: #ddd; font-variant-numeric: tabular-nums; white-space: nowrap; }
         #progress-container { flex-shrink: 0; padding: 10px 12px; background: #1e1e1e; touch-action: none; }
-        #progress-bar { position: relative; width: 100%; height: 8px; background: #444; border-radius: 4px; }
-        #progress-fill { position: absolute; left: 0; top: 0; height: 100%; background: #007aff; border-radius: 4px; width: 0%; pointer-events: none; }
-        .marker-dot { position: absolute; top: 50%; transform: translate(-50%, -50%); width: 10px; height: 10px; border-radius: 50%; border: 1px solid #fff; pointer-events: none; }
-        #controls-row { display: flex; gap: 10px; padding: 0 12px 10px 12px; background: #1e1e1e; flex-shrink: 0; }
+        #progress-bar { position: relative; width: 100%; height: 14px; background: #4b4b4b; border-radius: 7px; }
+        #progress-fill { position: absolute; left: 0; top: 0; height: 100%; background: #007aff; border-radius: 7px; width: 0%; pointer-events: none; }
+        .marker-dot { position: absolute; top: 50%; transform: translate(-50%, -50%); width: 13px; height: 13px; border-radius: 50%; border: 1px solid #fff; pointer-events: none; }
+        /* 영상 조작 버튼 5개를 기존 하단 버튼 영역에 한 줄로 통합 */
+        #controls-row {
+            display: flex; flex-wrap: nowrap; align-items: stretch;
+            gap: 6px; padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
+            background: #121212; flex-shrink: 0;
+            border-top: 1px solid #333;
+        }
+        #controls-row .btn {
+            flex: 1 1 0; min-width: 0;
+            padding: 9px 2px; font-size: 11px; line-height: 1.15;
+            letter-spacing: -0.2px; border-radius: 5px;
+        }
+        @media (max-width: 360px) {
+            #controls-row { gap: 4px; padding-left: 8px; padding-right: 8px; }
+            #controls-row .btn { font-size: 10px; }
+        }
         
         .btn { flex: 1; padding: 10px 0; text-align: center; background: #333; color: #fff; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; text-decoration: none; display: inline-block; white-space: nowrap; }
         .btn-primary { background: #007aff; }
@@ -197,7 +210,7 @@
         .record-actions button { background: #444; border: none; color: white; padding: 5px 8px; border-radius: 4px; font-size: 11px; margin-left: 5px; cursor: pointer; }
 
 
-        footer { display: flex; gap: 10px; padding: 10px 12px; background: #121212; flex-shrink: 0; border-top: 1px solid #333; }
+        /* 기존 footer가 새로운 5개 버튼 공통 영역 역할을 합니다. */
         
         /* 모달 */
         #modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1000; display: none; align-items: center; justify-content: center; }
@@ -301,18 +314,15 @@
             </div>
 
 
-            <div id="controls-row">
+            <!-- 기존 Save / 마커 관리 위치에 5개 버튼을 한 줄로 통합 -->
+            <footer id="controls-row">
                 <label class="btn btn-primary" for="video-upload">Video</label>
                 <input type="file" id="video-upload" accept="video/*, audio/*" style="display:none;">
-                
+
                 <label class="btn" for="json-load" style="background:#555;">Load</label>
                 <input type="file" id="json-load" accept=".json" style="display:none;">
-                
+
                 <button id="speed-btn" class="btn">×1</button>
-            </div>
-
-
-            <footer>
                 <button id="export-save" class="btn btn-primary">Save</button>
                 <button id="manage-markers" class="btn">마커 관리</button>
             </footer>

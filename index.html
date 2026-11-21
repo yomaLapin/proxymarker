@@ -123,8 +123,18 @@
 
         @media (orientation: landscape) {
             #view-check { flex-direction: row; }
-            .panel-left { display: flex; flex-direction: column; width: 55%; border-right: 1px solid #333; }
-            .panel-right { display: flex; flex-direction: column; width: 45%; background: #121212; }
+            /* 가로모드에서 마커 영역을 기존 45%의 절반(22.5%)으로 축소. 세로모드는 변경하지 않습니다. */
+            .panel-left { display: flex; flex-direction: column; width: 77.5%; flex: 0 0 77.5%; min-width: 0; border-right: 1px solid #333; }
+            .panel-right { display: flex; flex-direction: column; width: 22.5%; flex: 0 0 22.5%; min-width: 0; background: #121212; }
+
+            /* 좁아진 마커 패널에서 이름·메모·작업 버튼이 잘리지 않도록 가로모드에서만 줄바꿈합니다. */
+            .panel-right .record-item { flex-wrap: wrap; gap: 6px; }
+            .panel-right .record-time { width: auto; flex: 0 0 auto; }
+            .panel-right .record-info { flex: 1 1 100%; min-width: 0; margin: 0; flex-wrap: wrap; overflow-wrap: anywhere; }
+            .panel-right .record-actions { display: flex; flex: 1 1 100%; gap: 6px; min-width: 0; }
+            .panel-right .record-actions button { flex: 1 1 0; margin-left: 0; min-width: 0; }
+            .panel-right .marker-page { gap: 4px; padding: 0 6px; }
+            .panel-right .marker-btn { min-width: 0; padding: 12px 2px; font-size: 11px; overflow-wrap: anywhere; }
             
             #video-container, #progress-container, #controls-row,
             #marker-pad-wrapper, #marker-list-container { order: unset; }
@@ -292,7 +302,7 @@
 <body>
     <header>
         <div class="title-area">
-            <div id="project-title">Proxy Marker v1.5.0 <span id="offline-badge" style="display:none; font-size:10px; color:#ffcc00; margin-left:5px;">(Offline)</span></div>
+            <div id="project-title">Proxy Marker v1.5.1 <span id="offline-badge" style="display:none; font-size:10px; color:#ffcc00; margin-left:5px;">(Offline)</span></div>
             <div id="creator-credit">Created by yomaLapin</div>
         </div>
         <div class="header-actions">
@@ -1125,7 +1135,8 @@
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            // 모바일 브라우저가 다운로드를 시작하기 전에 Blob URL이 폐기되지 않도록 잠시 유지합니다.
+            setTimeout(() => URL.revokeObjectURL(url), 60 * 1000);
         }
 
 
@@ -1443,7 +1454,9 @@
                 )) return;
                 const base = (currentVideoInfo.name || 'ProxyMarker').replace(/\.[^/.]+$/, '')
                     .replace(/[\\/:*?"<>|]/g, '_');
-                downloadFile(edl, `${base}_Resolve_Markers.edl`, 'text/plain;charset=utf-8');
+                // iPad Safari와 Android 브라우저에서 .edl.txt를 덧붙이지 않도록 텍스트 MIME 대신 바이너리 다운로드 MIME을 사용합니다.
+                // EDL 텍스트 내용(UTF-8)은 기존과 완전히 동일합니다.
+                downloadFile(edl, `${base}_Resolve_Markers.edl`, 'application/octet-stream');
             } catch (error) {
                 alert('Resolve EDL 내보내기 실패: ' + error.message);
                 updateResolveExportStatus();

@@ -199,6 +199,14 @@
         .btn { flex: 1; padding: 10px 0; text-align: center; background: #333; color: #fff; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; text-decoration: none; display: inline-block; white-space: nowrap; }
         .btn-primary { background: #007aff; }
 
+        /* 모바일 조작 요소를 길게 눌렀을 때 텍스트 선택/검색 제안이 뜨지 않도록 제한합니다.
+           입력 필드와 열람 화면의 메모 텍스트는 선택 가능하도록 유지합니다. */
+        button, label.btn, .marker-btn, .record-item, [role="button"] {
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+        }
+
 
         #marker-pad-wrapper { flex-shrink: 0; background: #121212; padding: 10px 0 calc(10px + env(safe-area-inset-bottom)) 0; }
         #marker-pages { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
@@ -302,7 +310,7 @@
 <body>
     <header>
         <div class="title-area">
-            <div id="project-title">Proxy Marker v1.5.2 <span id="offline-badge" style="display:none; font-size:10px; color:#ffcc00; margin-left:5px;">(Offline)</span></div>
+            <div id="project-title">Proxy Marker v1.5.3 <span id="offline-badge" style="display:none; font-size:10px; color:#ffcc00; margin-left:5px;">(Offline)</span></div>
             <div id="creator-credit">Created by yomaLapin</div>
         </div>
         <div class="header-actions">

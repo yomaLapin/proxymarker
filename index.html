@@ -30,6 +30,23 @@
         }
 
 
+        /* 앱 조작 UI: 장시간 터치/더블탭/마우스 드래그 시 텍스트 선택과 검색 메뉴 억제.
+           영상, 시간 표시, 버튼, 마커, 기록 목록, 읽기 전용 안내 문구 모두 포함합니다. */
+        html, body {
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+        }
+        /* 실제 텍스트 편집 요소만 선택 허용. 기본 UI의 터치/클릭 이벤트는 변경하지 않습니다. */
+        input[type="text"], input[type="search"], input[type="number"],
+        input[type="email"], input[type="url"], input[type="tel"],
+        input[type="password"], textarea,
+        [contenteditable=""], [contenteditable="true"] {
+            -webkit-user-select: text;
+            user-select: text;
+            -webkit-touch-callout: default;
+        }
+
         /* 상단 헤더 */
         header {
             display: flex;
@@ -175,10 +192,10 @@
         #seek-offset { font-size: 22px; font-weight: bold; font-variant-numeric: tabular-nums; white-space: nowrap; }
         #seek-target { font-size: 12px; color: #ddd; font-variant-numeric: tabular-nums; white-space: nowrap; }
         #progress-container { flex-shrink: 0; padding: 10px 12px; background: #1e1e1e; touch-action: none; }
-        #progress-bar { position: relative; width: 100%; height: 14px; background: #4b4b4b; border-radius: 7px; }
-        #progress-fill { position: absolute; left: 0; top: 0; height: 100%; background: rgba(0, 122, 255, 0.2); border-radius: 7px; width: 0%; pointer-events: none; }
+        #progress-bar { position: relative; width: 100%; height: 14px; background: #41454b; border-radius: 7px; }
+        #progress-fill { position: absolute; left: 0; top: 0; height: 100%; background: #67d1ff; border-radius: 7px; width: 0%; pointer-events: none; }
         #marker-dots-container { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
-        .marker-dot { position: absolute; top: 50%; transform: translate(-50%, -50%); width: 3px; height: 20px; border-radius: 0; border: none; pointer-events: none; }
+        .marker-dot { position: absolute; top: 50%; transform: translate(-50%, -50%); width: 3px; height: 20px; border-radius: 0; border: none; box-shadow: 0 0 0 1px #15191f; pointer-events: none; }
         /* 영상 조작 버튼 5개를 기존 하단 버튼 영역에 한 줄로 통합 */
         #controls-row {
             display: flex; flex-wrap: nowrap; align-items: stretch;
@@ -199,8 +216,7 @@
         .btn { flex: 1; padding: 10px 0; text-align: center; background: #333; color: #fff; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; text-decoration: none; display: inline-block; white-space: nowrap; }
         .btn-primary { background: #007aff; }
 
-        /* 모바일 조작 요소를 길게 눌렀을 때 텍스트 선택/검색 제안이 뜨지 않도록 제한합니다.
-           입력 필드와 열람 화면의 메모 텍스트는 선택 가능하도록 유지합니다. */
+        /* 기존 조작 버튼의 선택 방지 규칙 유지(앱 전체 기본 정책을 보강). */
         button, label.btn, .marker-btn, .record-item, [role="button"] {
             -webkit-user-select: none;
             user-select: none;
@@ -310,7 +326,7 @@
 <body>
     <header>
         <div class="title-area">
-            <div id="project-title">Proxy Marker v1.5.3 <span id="offline-badge" style="display:none; font-size:10px; color:#ffcc00; margin-left:5px;">(Offline)</span></div>
+            <div id="project-title">Proxy Marker v1.5.5 <span id="offline-badge" style="display:none; font-size:10px; color:#ffcc00; margin-left:5px;">(Offline)</span></div>
             <div id="creator-credit">Created by yomaLapin</div>
         </div>
         <div class="header-actions">

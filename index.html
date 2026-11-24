@@ -90,7 +90,7 @@
         .btn-danger-sm { background: #ff3b30; }
 
 
-        /* v1.5.7: 제목 왼쪽 메뉴 버튼. 체크 화면 전환 버튼은 헤더에 유지합니다. */
+        /* v1.5.8: 제목 왼쪽 메뉴 버튼. 체크 화면 전환 버튼은 헤더에 유지합니다. */
         #menu-toggle {
             width: 32px; height: 32px; flex: 0 0 32px;
             display: inline-flex; align-items: center; justify-content: center;
@@ -130,11 +130,13 @@
         .drawer-action {
             display: block; width: 100%; margin-bottom: 8px;
             padding: 13px 12px; border: 0; border-radius: 6px;
-            background: #333; color: #fff; text-align: left;
+            background: #333; color: #fff; text-align: center;
             font: inherit; font-size: 14px; cursor: pointer;
             text-decoration: none; touch-action: manipulation;
         }
         .drawer-action:active { filter: brightness(1.15); }
+        /* MarkerSet와 Save(json) 사이에 일반 메뉴 버튼 한 개 높이만큼 여백을 둡니다. */
+        .drawer-section-gap { height: 43px; flex: 0 0 43px; margin-bottom: 8px; }
         .drawer-bottom-row {
             margin-top: auto; padding-top: 16px; display: grid;
             grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -144,11 +146,13 @@
             margin: 0; padding: 12px 2px; text-align: center;
             font-size: 11px; white-space: nowrap;
         }
+        #app-drawer #reset-btn { background: #ff3b30; color: #fff; }
         /* 낮은 가로 화면에서도 마지막 두 버튼이 가능한 한 스크롤 없이 보이도록 조정합니다. */
         @media (orientation: landscape) and (max-height: 480px) {
             #app-drawer { padding-top: 8px; padding-bottom: calc(8px + env(safe-area-inset-bottom)); }
             .drawer-head { margin-bottom: 6px; }
             .drawer-action { padding: 9px 10px; margin-bottom: 5px; }
+            .drawer-section-gap { height: 34px; flex-basis: 34px; margin-bottom: 5px; }
             .drawer-bottom-row { padding-top: 5px; }
             .drawer-bottom-row .drawer-action { padding: 10px 2px; margin-bottom: 0; }
         }
@@ -379,18 +383,18 @@
     <header>
         <button id="menu-toggle" type="button" aria-label="메뉴 열기" aria-controls="app-drawer" aria-expanded="false">☰</button>
         <div class="title-area">
-            <div id="project-title">Proxy Marker v1.5.7 <span id="offline-badge" style="display:none; font-size:10px; color:#ffcc00; margin-left:5px;">(Offline)</span></div>
+            <div id="project-title">Proxy Marker v1.5.8 <span id="offline-badge" style="display:none; font-size:10px; color:#ffcc00; margin-left:5px;">(Offline)</span></div>
             <div id="creator-credit">Created by yomaLapin</div>
         </div>
         <div class="header-actions">
             <!-- 체크(기록) 복귀 버튼만 헤더에 유지합니다. -->
             <div id="tab-menu" role="group" aria-label="화면 전환">
-                <button id="btn-tab-check" class="tab-btn active">체크 (기록)</button>
+                <button id="btn-tab-check" class="tab-btn active">Marking</button>
             </div>
         </div>
     </header>
 
-    <!-- v1.5.7: 기존 버튼 ID를 유지하여 기능 로직을 그대로 재사용합니다. -->
+    <!-- v1.5.8: 기존 버튼 ID를 유지하여 기능 로직을 그대로 재사용합니다. -->
     <div id="drawer-backdrop" aria-hidden="true"></div>
     <nav id="app-drawer" aria-label="Menu" aria-hidden="true">
         <div class="drawer-head"><span class="drawer-title">Menu</span></div>
@@ -399,9 +403,10 @@
         <label class="drawer-action" for="json-load">Load(json)</label>
         <input type="file" id="json-load" accept=".json" style="display:none;">
         <button id="manage-markers" type="button" class="drawer-action">MarkerSet</button>
-        <button id="btn-tab-read" type="button" class="drawer-action">List</button>
+        <div class="drawer-section-gap" aria-hidden="true"></div>
         <button id="export-save" type="button" class="drawer-action">Save(json)</button>
         <button id="export-resolve-edl" type="button" class="drawer-action">Save(EDL)</button>
+        <button id="btn-tab-read" type="button" class="drawer-action">MarkList</button>
         <div class="drawer-bottom-row">
             <button id="reset-btn" type="button" class="drawer-action">MarkerReset</button>
             <button id="fullscreen-btn" type="button" class="drawer-action">FullMode</button>
@@ -622,7 +627,7 @@
         const readListContainer = document.getElementById('read-list-container');
 
 
-        // v1.5.7: 서랍 열기/닫기 및 화면 회전 시 헤더 바로 아래에 맞춰 위치 조정.
+        // v1.5.8: 서랍 열기/닫기 및 화면 회전 시 헤더 바로 아래에 맞춰 위치 조정.
         const menuToggle = document.getElementById('menu-toggle');
         const appDrawer = document.getElementById('app-drawer');
         const drawerBackdrop = document.getElementById('drawer-backdrop');
@@ -1582,7 +1587,7 @@
             readListContainer.innerHTML = '';
             
             if (state.records.length === 0) {
-                readListContainer.innerHTML = '<div class="empty-read-msg">기록된 마커가 없습니다.<br>체크 탭에서 영상을 재생하고 마커를 기록해보세요.</div>';
+                readListContainer.innerHTML = '<div class="empty-read-msg">기록된 마커가 없습니다.<br>Marking에서 영상을 재생하고 마커를 기록해보세요.</div>';
                 return;
             }
 

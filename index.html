@@ -12,6 +12,14 @@
 
 
     <title>프록시 영상 마커 기록기</title>
+    <script>
+        // iPadOS는 시스템 창 제어 버튼이 앱의 좌상단을 덮을 수 있습니다.
+        // 창 크기 자동 감지 없이 iPadOS에서만 메뉴 아이콘의 수평 위치를 옮깁니다.
+        if (/iPad/.test(navigator.userAgent) ||
+            (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) {
+            document.documentElement.classList.add('ipados-menu-safe');
+        }
+    </script>
     <style>
         /* 기본 설정 및 리셋 */
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -57,26 +65,6 @@
             flex-shrink: 0;
             gap: 10px;
         }
-        .title-area {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            flex-grow: 1;
-            min-width: 0;
-            overflow: hidden;
-        }
-        #project-title {
-            font-weight: bold;
-            font-size: 14px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        #creator-credit {
-            font-size: 10px;
-            color: #888;
-            margin-top: 2px;
-        }
         .header-actions {
             display: flex;
             align-items: center;
@@ -100,6 +88,10 @@
             touch-action: manipulation;
         }
         #menu-toggle[aria-expanded="true"] { background: #007aff; border-color: #007aff; }
+        /* iPadOS 전용: 기존 제목 'Proxy'의 x/y 근처부터 메뉴 버튼을 배치합니다.
+           iPhone, Android, PC 화면에는 적용되지 않습니다. */
+        html.ipados-menu-safe #menu-toggle { margin-left: 72px; }
+
 
         /* 헤더 바로 아래에 펼쳐지는 서랍형 메뉴. 닫힌 상태에는 공간을 차지하지 않습니다. */
         #drawer-backdrop {
@@ -125,7 +117,8 @@
         #app-drawer.open {
             transform: translateX(0); visibility: visible; pointer-events: auto;
         }
-        .drawer-head { display: flex; align-items: center; margin-bottom: 12px; flex-shrink: 0; }
+        .drawer-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 12px; flex-shrink: 0; }
+        .drawer-version { margin-left: auto; color: #999; font-size: 10px; white-space: nowrap; }
         .drawer-title { font-size: 13px; font-weight: bold; color: #ccc; }
         .drawer-action {
             display: block; width: 100%; margin-bottom: 8px;
@@ -184,8 +177,6 @@
             #tab-menu { gap: 3px; margin-right: 2px; }
             .tab-btn { padding: 6px 5px; font-size: 10px; }
             .header-btn { padding: 6px; font-size: 10px; }
-            #project-title { font-size: 12px; }
-            #creator-credit { display: none; }
             #menu-toggle { width: 30px; height: 30px; flex-basis: 30px; font-size: 18px; }
         }
         @media (max-width: 360px) {
@@ -195,7 +186,6 @@
             .header-btn { padding: 6px 4px; font-size: 9px; }
             .header-actions { gap: 2px; }
             #tab-menu { gap: 2px; margin-right: 1px; }
-            #project-title { font-size: 11px; }
         }
 
 
@@ -494,10 +484,6 @@
 <body>
     <header>
         <button id="menu-toggle" type="button" aria-label="메뉴 열기" aria-controls="app-drawer" aria-expanded="false">☰</button>
-        <div class="title-area">
-            <div id="project-title">Proxy Marker v1.6.2 <span id="offline-badge" style="display:none; font-size:10px; color:#ffcc00; margin-left:5px;">(Offline)</span></div>
-            <div id="creator-credit">Created by yomaLapin</div>
-        </div>
         <div class="header-actions">
             <!-- 체크(기록) 복귀 버튼만 헤더에 유지합니다. -->
             <div id="tab-menu" role="group" aria-label="화면 전환">
@@ -510,7 +496,8 @@
     <!-- v1.5.8: 기존 버튼 ID를 유지하여 기능 로직을 그대로 재사용합니다. -->
     <div id="drawer-backdrop" aria-hidden="true"></div>
     <nav id="app-drawer" aria-label="Menu" aria-hidden="true">
-        <div class="drawer-head"><span class="drawer-title">Menu</span></div>
+        <div class="drawer-head"><span class="drawer-title">Menu</span><span class="drawer-version">yomaLapin(v1.6.4)</span></div>
+        <span id="offline-badge" style="display:none; font-size:10px; color:#ffcc00; margin-bottom:5px;">(Offline)</span>
         <label class="drawer-action" for="video-upload">Open(file)</label>
         <input type="file" id="video-upload" accept="video/*, audio/*" style="display:none;">
         <label class="drawer-action" for="json-load">Load(Markjson)</label>

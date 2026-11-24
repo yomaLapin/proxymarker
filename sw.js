@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'proxymarker-cache-';
-const CACHE_VERSION = 'v1.6.2';
+const CACHE_VERSION = 'v1.6.4';
 const CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
 
 // 캐시할 기본 파일 목록

@@ -135,8 +135,11 @@
             text-decoration: none; touch-action: manipulation;
         }
         .drawer-action:active { filter: brightness(1.15); }
-        /* MarkerSet와 Save(json) 사이에 일반 메뉴 버튼 한 개 높이만큼 여백을 둡니다. */
-        .drawer-section-gap { height: 43px; flex: 0 0 43px; margin-bottom: 8px; }
+        /* 기능 영역 구분선: 파일/마커, 마커 출력, SRT 입력, SRT 출력 */
+        .drawer-section-divider {
+            border: 0; border-top: 1px solid #545454;
+            height: 0; margin: 5px 0 13px; flex: 0 0 auto;
+        }
         .drawer-bottom-row {
             margin-top: auto; padding-top: 16px; display: grid;
             grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -151,22 +154,24 @@
         @media (orientation: landscape) and (max-height: 480px) {
             #app-drawer { padding-top: 8px; padding-bottom: calc(8px + env(safe-area-inset-bottom)); }
             .drawer-head { margin-bottom: 6px; }
-            .drawer-action { padding: 9px 10px; margin-bottom: 5px; }
-            .drawer-section-gap { height: 34px; flex-basis: 34px; margin-bottom: 5px; }
+            .drawer-action { padding: 8px 10px; margin-bottom: 4px; font-size: 12px; }
+            .drawer-section-divider { margin: 3px 0 8px; }
             .drawer-bottom-row { padding-top: 5px; }
             .drawer-bottom-row .drawer-action { padding: 10px 2px; margin-bottom: 0; }
         }
 
         /* 화면 전환 탭을 헤더에 배치해 별도 탭 행 제거 */
         #tab-menu {
-            display: flex;
+            /* Marking / SRT 탭의 너비를 동일하게 맞춥니다. */
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
             align-items: center;
             gap: 4px;
             flex-shrink: 0;
             margin-right: 4px;
         }
         .tab-btn {
-            flex: 0 0 auto; padding: 6px 7px;
+            min-width: 0; width: 100%; padding: 6px 7px;
             background: #2b2b2b; color: #bbb;
             border: 1px solid #444; border-radius: 4px;
             font-size: 11px; font-weight: bold; white-space: nowrap;
@@ -490,7 +495,7 @@
     <header>
         <button id="menu-toggle" type="button" aria-label="메뉴 열기" aria-controls="app-drawer" aria-expanded="false">☰</button>
         <div class="title-area">
-            <div id="project-title">Proxy Marker v1.6.0 <span id="offline-badge" style="display:none; font-size:10px; color:#ffcc00; margin-left:5px;">(Offline)</span></div>
+            <div id="project-title">Proxy Marker v1.6.2 <span id="offline-badge" style="display:none; font-size:10px; color:#ffcc00; margin-left:5px;">(Offline)</span></div>
             <div id="creator-credit">Created by yomaLapin</div>
         </div>
         <div class="header-actions">
@@ -508,16 +513,20 @@
         <div class="drawer-head"><span class="drawer-title">Menu</span></div>
         <label class="drawer-action" for="video-upload">Open(file)</label>
         <input type="file" id="video-upload" accept="video/*, audio/*" style="display:none;">
-        <label class="drawer-action" for="json-load">Load(json)</label>
+        <label class="drawer-action" for="json-load">Load(Markjson)</label>
         <input type="file" id="json-load" accept=".json" style="display:none;">
         <button id="manage-markers" type="button" class="drawer-action">MarkerSet</button>
-        <div class="drawer-section-gap" aria-hidden="true"></div>
-        <button id="export-save" type="button" class="drawer-action">Save(json)</button>
+        <hr class="drawer-section-divider" aria-hidden="true">
+        <button id="export-save" type="button" class="drawer-action">Save(Markjson)</button>
         <button id="export-resolve-edl" type="button" class="drawer-action">Save(EDL)</button>
         <button id="btn-tab-read" type="button" class="drawer-action">MarkList</button>
-        <div class="drawer-srt-divider" aria-hidden="true"></div>
+        <hr class="drawer-section-divider" aria-hidden="true">
         <label class="drawer-action" for="srt-txt-upload">Open(TXT)</label>
         <input type="file" id="srt-txt-upload" accept=".txt,text/plain" style="display:none;">
+        <label class="drawer-action" for="srt-json-upload">Load(SRTjson)</label>
+        <input type="file" id="srt-json-upload" accept=".json,application/json" style="display:none;">
+        <hr class="drawer-section-divider" aria-hidden="true">
+        <button id="export-srt-json" type="button" class="drawer-action">Save(SRTjson)</button>
         <button id="export-srt" type="button" class="drawer-action">Save(SRT)</button>
         <div class="drawer-bottom-row">
             <button id="reset-btn" type="button" class="drawer-action">MarkerReset</button>
@@ -582,7 +591,7 @@
         </section>
         <section class="srt-right" aria-label="TXT 문단 및 자막 기록">
             <div id="srt-text-heading">
-                <strong>TXT 문단</strong>
+                <strong>Text</strong>
                 <span id="srt-text-count">TXT를 불러와주세요</span>
             </div>
             <div id="srt-text-list" role="listbox" aria-label="자막 문단 선택"></div>
@@ -764,6 +773,8 @@
         const srtTextList = document.getElementById('srt-text-list');
         const srtTextCount = document.getElementById('srt-text-count');
         const srtTxtInput = document.getElementById('srt-txt-upload');
+        const srtJsonInput = document.getElementById('srt-json-upload');
+        const srtJsonExportBtn = document.getElementById('export-srt-json');
         const srtExportBtn = document.getElementById('export-srt');
         const srtStartBtn = document.getElementById('srt-set-start');
         const srtEndBtn = document.getElementById('srt-set-end');
@@ -814,11 +825,11 @@
         window.addEventListener('resize', () => { if (drawerOpen) positionDrawer(); });
         window.addEventListener('orientationchange', () => { if (drawerOpen) positionDrawer(); });
         // 파일 선택 창은 서랍을 닫기 전에 열도록 두고, 파일 선택 후 닫습니다.
-        [fileInput, jsonLoadInput, srtTxtInput].forEach(input => {
+        [fileInput, jsonLoadInput, srtTxtInput, srtJsonInput].forEach(input => {
             input.addEventListener('change', () => setDrawerOpen(false));
         });
         [document.getElementById('export-save'), document.getElementById('manage-markers'),
-         exportResolveEdlButton, btnTabRead, resetBtn, fullscreenBtn, srtExportBtn]
+         exportResolveEdlButton, btnTabRead, resetBtn, fullscreenBtn, srtExportBtn, srtJsonExportBtn]
             .forEach(btn => btn.addEventListener('click', () => setDrawerOpen(false)));
 
         async function initApp() {
@@ -1827,6 +1838,9 @@
         const emptySrtState = () => ({ fileName: '', entries: [], selectedIndex: 0, undo: [], redo: [] });
         let srtState = emptySrtState();
         let srtSaveQueue = Promise.resolve();
+        // 영상 없이 SRT JSON부터 불러오는 경우, 다음 영상 선택 시 연결합니다.
+        let pendingSrtJsonImport = false;
+        let importedSrtVideoInfo = null;
         const isSrtTime = v => typeof v === 'number' && Number.isFinite(v) && v >= 0;
         const cleanSrtEntry = e => ({
             text: String((e && e.text) || ''),
@@ -1848,9 +1862,27 @@
         }
         async function loadSrtProject(videoId) {
             try {
+                // 이전 비디오의 자동 저장이 미처 끝나지 않았더라도 로드 순서를 보장합니다.
+                await srtSaveQueue.catch(() => {});
                 const saved = await dbGet('srtProjects', videoId);
                 // 비디오 전환 중 예전 영상의 비동기 결과가 덮어쓰지 않도록 확인.
                 if (currentVideoId !== videoId) return;
+                if (pendingSrtJsonImport) {
+                    const hasExisting = Array.isArray(saved?.entries) && saved.entries.length > 0;
+                    const accept = !hasExisting || confirm(
+                        `선택한 영상에 기존 SRT 작업(${saved.entries.length}문단)이 있습니다.\n` +
+                        '먼저 불러온 SRTjson으로 현재 영상의 SRT 작업을 교체하시겠습니까?\n' +
+                        '취소하면 기존 작업을 복원합니다. 마커 데이터는 변경하지 않습니다.'
+                    );
+                    pendingSrtJsonImport = false;
+                    if (accept) {
+                        // JSON 원본 영상이 달라도 현재 선택한 영상에 연결하여 저장합니다.
+                        await saveSrtProject();
+                        renderSrtParagraphs();
+                        return;
+                    }
+                    importedSrtVideoInfo = null;
+                }
                 if (saved) {
                     srtState = {
                         fileName: String(saved.fileName || ''),
@@ -1885,6 +1917,127 @@
             srtSaveQueue.catch(err => { console.error('SRT 자동 저장 오류:', err); alert('SRT 자동 저장에 실패했습니다. 브라우저 저장 공간을 확인해 주세요.'); });
             return srtSaveQueue;
         }
+        /* v1.6.1: SRT 작업용 JSON 백업/복원. 마커 JSON과 포맷을 분리합니다. */
+        const SRT_BACKUP_FORMAT = 'ProxyMarkerSRTBackup';
+        function srtBackupVideoInfo() {
+            const source = currentVideoInfo || importedSrtVideoInfo;
+            return source ? {
+                id: currentVideoId || importedSrtVideoInfo?.id || null,
+                name: String(source.name || ''),
+                size: Number.isFinite(source.size) ? source.size : null,
+                lastModified: Number.isFinite(source.lastModified) ? source.lastModified : null,
+                duration: Number.isFinite(source.duration) ? source.duration : null
+            } : { id: null, name: '', size: null, lastModified: null, duration: null };
+        }
+        function makeSrtBackup() {
+            return {
+                format: SRT_BACKUP_FORMAT,
+                version: 1,
+                exportedAt: new Date().toISOString(),
+                video: srtBackupVideoInfo(),
+                project: {
+                    fileName: srtState.fileName,
+                    entries: srtState.entries.map(cleanSrtEntry),
+                    selectedIndex: srtState.selectedIndex,
+                    // IndexedDB와 동일하게 Undo/Redo도 보관합니다.
+                    undo: srtState.undo.slice(-SRT_HISTORY_LIMIT).map(cleanSrtSnapshot),
+                    redo: srtState.redo.slice(-SRT_HISTORY_LIMIT).map(cleanSrtSnapshot)
+                }
+            };
+        }
+        function localSrtBackupTimestamp(date = new Date()) {
+            const p = n => String(n).padStart(2, '0');
+            return `${date.getFullYear()}${p(date.getMonth()+1)}${p(date.getDate())}_${p(date.getHours())}${p(date.getMinutes())}${p(date.getSeconds())}`;
+        }
+        srtJsonExportBtn.addEventListener('click', () => {
+            if (!srtState.entries.length) return alert('백업할 SRT 작업이 없습니다. TXT나 SRTjson을 먼저 불러와주세요.');
+            // 현재 상태를 직접 스냅샷으로 출력하여 모바일 다운로드의 사용자 제스처를 유지합니다.
+            const sourceName = currentVideoInfo?.name || importedSrtVideoInfo?.name || 'ProxyMarker';
+            const base = sourceName.replace(/\.[^/.]+$/, '').replace(/[\\/:*?"<>|\x00-\x1f]/g, '_').trim().slice(0, 100) || 'ProxyMarker';
+            const fileName = `${base}_srt_${localSrtBackupTimestamp()}.json`;
+            downloadFile(JSON.stringify(makeSrtBackup(), null, 2), fileName, 'application/octet-stream');
+        });
+        function parseSrtBackup(data) {
+            if (!data || data.format !== SRT_BACKUP_FORMAT || data.version !== 1) {
+                throw new Error('ProxyMarker SRT 작업 백업 파일이 아닙니다. Markjson과 구분해 주세요.');
+            }
+            const p = data.project;
+            if (!p || !Array.isArray(p.entries) || !p.entries.length || p.entries.length > 20000) {
+                throw new Error('문단 데이터가 없거나 지원 범위를 초과했습니다.');
+            }
+            const entries = p.entries.map((entry, i) => {
+                if (!entry || typeof entry.text !== 'string' || !entry.text.trim() ||
+                    !['start','end'].every(k => entry[k] === null || isSrtTime(entry[k]))) {
+                    throw new Error(`${i+1}번 문단의 텍스트 또는 시간 형식이 올바르지 않습니다.`);
+                }
+                return cleanSrtEntry(entry);
+            });
+            if (!Number.isInteger(p.selectedIndex) || p.selectedIndex < 0 || p.selectedIndex >= entries.length) {
+                throw new Error('선택된 문단 번호가 올바르지 않습니다.');
+            }
+            const validateHistory = records => {
+                if (records === undefined) return [];
+                if (!Array.isArray(records) || records.length > SRT_HISTORY_LIMIT) throw new Error('Undo/Redo 이력 형식이 올바르지 않습니다.');
+                return records.map(snap => {
+                    if (!snap || !Array.isArray(snap.entries) || snap.entries.length !== entries.length ||
+                        !Number.isInteger(snap.selectedIndex) || snap.selectedIndex < 0 || snap.selectedIndex >= entries.length) {
+                        throw new Error('Undo/Redo 문단 수나 선택 위치가 올바르지 않습니다.');
+                    }
+                    // 손상된 이력 대신 안전한 현재 데이터로 복원하도록 시간과 텍스트를 검사합니다.
+                    snap.entries.forEach((e, i) => {
+                        if (!e || typeof e.text !== 'string' ||
+                            !['start','end'].every(k => e[k] === null || isSrtTime(e[k]))) {
+                            throw new Error(`Undo/Redo 이력 ${i+1}번 문단이 손상되었습니다.`);
+                        }
+                    });
+                    return cleanSrtSnapshot(snap);
+                });
+            };
+            const videoInfo = data.video && typeof data.video === 'object' ? data.video : null;
+            return {
+                state: {
+                    fileName: String(p.fileName || '복원한 TXT'),
+                    entries,
+                    selectedIndex: p.selectedIndex,
+                    undo: validateHistory(p.undo),
+                    redo: validateHistory(p.redo)
+                },
+                videoInfo: videoInfo ? {
+                    id: String(videoInfo.id || ''), name: String(videoInfo.name || ''),
+                    size: videoInfo.size, lastModified: videoInfo.lastModified,
+                    duration: videoInfo.duration
+                } : null
+            };
+        }
+        srtJsonInput.addEventListener('change', async event => {
+            const file = event.target.files?.[0];
+            event.target.value = ''; // 같은 JSON을 다시 선택할 수 있도록 초기화
+            if (!file) return;
+            if (!/\.json$/i.test(file.name)) return alert('JSON(.json) 파일을 선택해 주세요.');
+            if (file.size > 80 * 1024 * 1024) return alert('SRTjson 파일은 80MB 이하만 지원합니다.');
+            try {
+                const parsed = parseSrtBackup(JSON.parse((await file.text()).replace(/^\uFEFF/, '')));
+                const sourceVideo = parsed.videoInfo?.name || '정보 없음';
+                const activeVideo = currentVideoInfo?.name || '미선택';
+                const replaceNotice = srtState.entries.length ? `현재 SRT 작업 ${srtState.entries.length}개 문단은 교체됩니다.\n` : '';
+                if (!confirm(`SRTjson 백업을 불러오시겠습니까?\n\n백업 영상: ${sourceVideo}\n현재 영상: ${activeVideo}\n문단: ${parsed.state.entries.length}개\n\n${replaceNotice}영상이 달라도 가져오며, 기존 마커 기록은 변경하지 않습니다.`)) return;
+                await srtSaveQueue.catch(() => {});
+                srtState = parsed.state;
+                importedSrtVideoInfo = parsed.videoInfo;
+                pendingSrtJsonImport = !currentVideoId;
+                renderSrtParagraphs();
+                srtTextList.scrollTop = 0;
+                if (currentVideoId) {
+                    // 현재 영상에 연결하되 마커 전용 projects와 settings는 변경하지 않습니다.
+                    await saveSrtProject();
+                }
+                setAppView('srt');
+            } catch (error) {
+                console.error('SRTjson 불러오기 실패:', error);
+                alert('SRTjson 불러오기 실패: ' + error.message);
+            }
+        });
+
         function renderSrtMarkers() {
             if (!srtMarkers) return;
             srtMarkers.replaceChildren();

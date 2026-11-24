@@ -90,6 +90,56 @@
         .btn-danger-sm { background: #ff3b30; }
 
 
+        /* v1.5.6: 제목 왼쪽 메뉴 버튼. 기존 헤더 탭과 전체화면 기능은 유지합니다. */
+        #menu-toggle {
+            width: 32px; height: 32px; flex: 0 0 32px;
+            display: inline-flex; align-items: center; justify-content: center;
+            padding: 0; background: #333; color: #fff;
+            border: 1px solid #484848; border-radius: 5px;
+            font-size: 20px; line-height: 1; cursor: pointer;
+            touch-action: manipulation;
+        }
+        #menu-toggle[aria-expanded="true"] { background: #007aff; border-color: #007aff; }
+
+        /* 헤더 바로 아래에 펼쳐지는 서랍형 메뉴. 닫힌 상태에는 공간을 차지하지 않습니다. */
+        #drawer-backdrop {
+            display: none; position: fixed; z-index: 30;
+            top: var(--drawer-top, 56px); bottom: 0; left: 0; right: 0;
+            background: rgba(0,0,0,.55);
+        }
+        #drawer-backdrop.open { display: block; }
+        #app-drawer {
+            position: fixed; z-index: 31;
+            top: var(--drawer-top, 56px); bottom: 0;
+            left: env(safe-area-inset-left);
+            width: min(290px, calc(100vw - 28px));
+            padding: 12px 12px calc(12px + env(safe-area-inset-bottom));
+            background: #1e1e1e; border-right: 1px solid #3d3d3d;
+            box-shadow: 5px 0 18px rgba(0,0,0,.35);
+            overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y;
+            transform: translateX(calc(-100% - 24px));
+            visibility: hidden; pointer-events: none;
+            transition: transform .18s ease, visibility .18s;
+        }
+        #app-drawer.open {
+            transform: translateX(0); visibility: visible; pointer-events: auto;
+        }
+        .drawer-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .drawer-title { font-size: 13px; font-weight: bold; color: #ccc; }
+        #drawer-close {
+            width: 32px; height: 32px; padding: 0; border: 0; border-radius: 5px;
+            background: #383838; color: #fff; font-size: 20px; cursor: pointer;
+        }
+        .drawer-action {
+            display: block; width: 100%; margin-bottom: 8px;
+            padding: 13px 12px; border: 0; border-radius: 6px;
+            background: #333; color: #fff; text-align: left;
+            font: inherit; font-size: 14px; cursor: pointer;
+            text-decoration: none; touch-action: manipulation;
+        }
+        .drawer-action-primary { background: #007aff; }
+        .drawer-action:active { filter: brightness(1.15); }
+
         /* 화면 전환 탭을 헤더에 배치해 별도 탭 행 제거 */
         #tab-menu {
             display: flex;
@@ -114,6 +164,16 @@
             .header-btn { padding: 6px; font-size: 10px; }
             #project-title { font-size: 12px; }
             #creator-credit { display: none; }
+            #menu-toggle { width: 30px; height: 30px; flex-basis: 30px; font-size: 18px; }
+        }
+        @media (max-width: 360px) {
+            header { gap: 3px; padding-left: 5px; padding-right: 5px; }
+            #menu-toggle { width: 27px; height: 28px; flex-basis: 27px; font-size: 17px; }
+            .tab-btn { padding: 6px 4px; font-size: 9px; }
+            .header-btn { padding: 6px 4px; font-size: 9px; }
+            .header-actions { gap: 2px; }
+            #tab-menu { gap: 2px; margin-right: 1px; }
+            #project-title { font-size: 11px; }
         }
 
 
@@ -133,7 +193,6 @@
 
         #video-container { order: 1; }
         #progress-container { order: 2; }
-        #controls-row { order: 3; }
         #marker-list-container { order: 5; flex: 1 1 100px; }
         #marker-pad-wrapper { order: 6; }
 
@@ -153,13 +212,12 @@
             .panel-right .marker-page { gap: 4px; padding: 0 6px; }
             .panel-right .marker-btn { min-width: 0; padding: 12px 2px; font-size: 11px; overflow-wrap: anywhere; }
             
-            #video-container, #progress-container, #controls-row,
+            #video-container, #progress-container,
             #marker-pad-wrapper, #marker-list-container { order: unset; }
 
 
             #video-container { flex: 1 1 auto; }
             #progress-container { flex-shrink: 0; }
-            #controls-row { flex-shrink: 0; border-top: none; padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
 
 
             #marker-pad-wrapper { flex-shrink: 0; }
@@ -196,22 +254,17 @@
         #progress-fill { position: absolute; left: 0; top: 0; height: 100%; background: #67d1ff; border-radius: 7px; width: 0%; pointer-events: none; }
         #marker-dots-container { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
         .marker-dot { position: absolute; top: 50%; transform: translate(-50%, -50%); width: 3px; height: 20px; border-radius: 0; border: none; box-shadow: 0 0 0 1px #15191f; pointer-events: none; }
-        /* 영상 조작 버튼 5개를 기존 하단 버튼 영역에 한 줄로 통합 */
-        #controls-row {
-            display: flex; flex-wrap: nowrap; align-items: stretch;
-            gap: 6px; padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
-            background: #121212; flex-shrink: 0;
-            border-top: 1px solid #333;
+        /* v1.5.6: 배속 조작은 영상의 하단 오른쪽, 시간 표시와 같은 높이에 배치. */
+        #speed-btn {
+            position: absolute; right: 10px; bottom: 10px; z-index: 12;
+            min-width: 44px; min-height: 28px; padding: 4px 9px;
+            border: 1px solid rgba(255,255,255,.30); border-radius: 5px;
+            background: rgba(0,0,0,.70); color: #fff;
+            font-size: 12px; font-weight: bold; line-height: 1.2;
+            cursor: pointer; touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
         }
-        #controls-row .btn {
-            flex: 1 1 0; min-width: 0;
-            padding: 9px 2px; font-size: 11px; line-height: 1.15;
-            letter-spacing: -0.2px; border-radius: 5px;
-        }
-        @media (max-width: 360px) {
-            #controls-row { gap: 4px; padding-left: 8px; padding-right: 8px; }
-            #controls-row .btn { font-size: 10px; }
-        }
+        #speed-btn:active { background: rgba(0,122,255,.85); }
         
         .btn { flex: 1; padding: 10px 0; text-align: center; background: #333; color: #fff; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; text-decoration: none; display: inline-block; white-space: nowrap; }
         .btn-primary { background: #007aff; }
@@ -245,7 +298,7 @@
         .record-actions button { background: #444; border: none; color: white; padding: 5px 8px; border-radius: 4px; font-size: 11px; margin-left: 5px; cursor: pointer; }
 
 
-        /* 기존 footer가 새로운 5개 버튼 공통 영역 역할을 합니다. */
+        /* 파일·마커 관리 버튼은 헤더 아래 서랍 메뉴로 옮겼습니다. */
         
         /* 모달 */
         #modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1000; display: none; align-items: center; justify-content: center; }
@@ -325,8 +378,9 @@
 </head>
 <body>
     <header>
+        <button id="menu-toggle" type="button" aria-label="메뉴 열기" aria-controls="app-drawer" aria-expanded="false">☰</button>
         <div class="title-area">
-            <div id="project-title">Proxy Marker v1.5.5 <span id="offline-badge" style="display:none; font-size:10px; color:#ffcc00; margin-left:5px;">(Offline)</span></div>
+            <div id="project-title">Proxy Marker v1.5.6 <span id="offline-badge" style="display:none; font-size:10px; color:#ffcc00; margin-left:5px;">(Offline)</span></div>
             <div id="creator-credit">Created by yomaLapin</div>
         </div>
         <div class="header-actions">
@@ -340,6 +394,20 @@
         </div>
     </header>
 
+    <!-- v1.5.6: 파일 및 마커 관리의 위치만 옮긴 서랍 메뉴. 기존 버튼 ID/입력 연결은 유지. -->
+    <div id="drawer-backdrop" aria-hidden="true"></div>
+    <nav id="app-drawer" aria-label="파일 및 마커 메뉴" aria-hidden="true">
+        <div class="drawer-head">
+            <span class="drawer-title">파일 · 마커 메뉴</span>
+            <button id="drawer-close" type="button" aria-label="메뉴 닫기">×</button>
+        </div>
+        <label class="drawer-action drawer-action-primary" for="video-upload">Video</label>
+        <input type="file" id="video-upload" accept="video/*, audio/*" style="display:none;">
+        <label class="drawer-action" for="json-load">Load</label>
+        <input type="file" id="json-load" accept=".json" style="display:none;">
+        <button id="export-save" type="button" class="drawer-action drawer-action-primary">Save</button>
+        <button id="manage-markers" type="button" class="drawer-action">마커 관리</button>
+    </nav>
 
     <!-- [기존 화면] 체크 (기록) 영역 -->
     <div id="view-check" class="app-body active-view">
@@ -352,6 +420,7 @@
                     <div id="seek-target">이동 위치 00:00:00.0 / 00:00:00.0</div>
                 </div>
                 <div id="time-overlay">00:00:00 / 00:00:00</div>
+                <button id="speed-btn" type="button" aria-label="재생 배속 변경">×1</button>
                 <div id="video-placeholder" style="position: absolute; color: #888; text-align: center; pointer-events: none; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%;">
                     영상을 불러와주세요.
                 </div>
@@ -366,18 +435,7 @@
             </div>
 
 
-            <!-- 기존 Save / 마커 관리 위치에 5개 버튼을 한 줄로 통합 -->
-            <footer id="controls-row">
-                <label class="btn btn-primary" for="video-upload">Video</label>
-                <input type="file" id="video-upload" accept="video/*, audio/*" style="display:none;">
-
-                <label class="btn" for="json-load" style="background:#555;">Load</label>
-                <input type="file" id="json-load" accept=".json" style="display:none;">
-
-                <button id="speed-btn" class="btn">×1</button>
-                <button id="export-save" class="btn btn-primary">Save</button>
-                <button id="manage-markers" class="btn">마커 관리</button>
-            </footer>
+            <!-- 기존 버튼 줄 제거: 확보한 공간은 영상/기록 영역이 활용합니다. -->
         </div>
 
 
@@ -572,6 +630,48 @@
         const resolveExportStatus = document.getElementById('resolve-export-status');
         const readListContainer = document.getElementById('read-list-container');
 
+
+        // v1.5.6: 서랍 열기/닫기 및 화면 회전 시 헤더 바로 아래에 맞춰 위치 조정.
+        const menuToggle = document.getElementById('menu-toggle');
+        const appDrawer = document.getElementById('app-drawer');
+        const drawerBackdrop = document.getElementById('drawer-backdrop');
+        const drawerClose = document.getElementById('drawer-close');
+        let drawerOpen = false;
+
+        function positionDrawer() {
+            document.documentElement.style.setProperty('--drawer-top',
+                `${document.querySelector('header').getBoundingClientRect().bottom}px`);
+        }
+        function setDrawerOpen(open) {
+            drawerOpen = !!open;
+            if (drawerOpen) positionDrawer();
+            appDrawer.classList.toggle('open', drawerOpen);
+            drawerBackdrop.classList.toggle('open', drawerOpen);
+            appDrawer.setAttribute('aria-hidden', String(!drawerOpen));
+            menuToggle.setAttribute('aria-expanded', String(drawerOpen));
+            menuToggle.setAttribute('aria-label', drawerOpen ? '메뉴 닫기' : '메뉴 열기');
+            // 닫힌 상태에서 서랍 내 버튼이 키보드 포커스를 받지 않도록 합니다.
+            if (drawerOpen) appDrawer.removeAttribute('inert');
+            else appDrawer.setAttribute('inert', '');
+        }
+        appDrawer.setAttribute('inert', '');
+        menuToggle.addEventListener('click', () => setDrawerOpen(!drawerOpen));
+        drawerClose.addEventListener('click', () => setDrawerOpen(false));
+        drawerBackdrop.addEventListener('click', () => setDrawerOpen(false));
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Escape' && drawerOpen) {
+                setDrawerOpen(false);
+                menuToggle.focus();
+            }
+        });
+        window.addEventListener('resize', () => { if (drawerOpen) positionDrawer(); });
+        window.addEventListener('orientationchange', () => { if (drawerOpen) positionDrawer(); });
+        // 파일 선택 창은 서랍을 닫기 전에 열도록 두고, 파일 선택 후 닫습니다.
+        [fileInput, jsonLoadInput].forEach(input => {
+            input.addEventListener('change', () => setDrawerOpen(false));
+        });
+        [document.getElementById('export-save'), document.getElementById('manage-markers')]
+            .forEach(btn => btn.addEventListener('click', () => setDrawerOpen(false)));
 
         async function initApp() {
             try {
@@ -788,7 +888,10 @@
 
         const speeds = [1, 1.5, 2, 4];
         let currentSpeedIdx = 0;
-        speedBtn.addEventListener('click', () => {
+        // 영상 재생/드래그 이벤트와 배속 버튼의 터치 이벤트가 충돌하지 않도록 분리합니다.
+        speedBtn.addEventListener('pointerdown', event => event.stopPropagation());
+        speedBtn.addEventListener('click', event => {
+            event.stopPropagation();
             currentSpeedIdx = (currentSpeedIdx + 1) % speeds.length;
             const newSpeed = speeds[currentSpeedIdx];
             video.playbackRate = newSpeed;

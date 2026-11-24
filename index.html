@@ -90,7 +90,7 @@
         .btn-danger-sm { background: #ff3b30; }
 
 
-        /* v1.5.6: 제목 왼쪽 메뉴 버튼. 기존 헤더 탭과 전체화면 기능은 유지합니다. */
+        /* v1.5.7: 제목 왼쪽 메뉴 버튼. 체크 화면 전환 버튼은 헤더에 유지합니다. */
         #menu-toggle {
             width: 32px; height: 32px; flex: 0 0 32px;
             display: inline-flex; align-items: center; justify-content: center;
@@ -110,9 +110,10 @@
         #drawer-backdrop.open { display: block; }
         #app-drawer {
             position: fixed; z-index: 31;
+            display: flex; flex-direction: column;
             top: var(--drawer-top, 56px); bottom: 0;
             left: env(safe-area-inset-left);
-            width: min(290px, calc(100vw - 28px));
+            width: min(217.5px, calc(75vw - 21px)); /* v1.5.6 서랍 폭의 75% */
             padding: 12px 12px calc(12px + env(safe-area-inset-bottom));
             background: #1e1e1e; border-right: 1px solid #3d3d3d;
             box-shadow: 5px 0 18px rgba(0,0,0,.35);
@@ -124,12 +125,8 @@
         #app-drawer.open {
             transform: translateX(0); visibility: visible; pointer-events: auto;
         }
-        .drawer-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .drawer-head { display: flex; align-items: center; margin-bottom: 12px; flex-shrink: 0; }
         .drawer-title { font-size: 13px; font-weight: bold; color: #ccc; }
-        #drawer-close {
-            width: 32px; height: 32px; padding: 0; border: 0; border-radius: 5px;
-            background: #383838; color: #fff; font-size: 20px; cursor: pointer;
-        }
         .drawer-action {
             display: block; width: 100%; margin-bottom: 8px;
             padding: 13px 12px; border: 0; border-radius: 6px;
@@ -137,8 +134,24 @@
             font: inherit; font-size: 14px; cursor: pointer;
             text-decoration: none; touch-action: manipulation;
         }
-        .drawer-action-primary { background: #007aff; }
         .drawer-action:active { filter: brightness(1.15); }
+        .drawer-bottom-row {
+            margin-top: auto; padding-top: 16px; display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            gap: 7px; flex-shrink: 0;
+        }
+        .drawer-bottom-row .drawer-action {
+            margin: 0; padding: 12px 2px; text-align: center;
+            font-size: 11px; white-space: nowrap;
+        }
+        /* 낮은 가로 화면에서도 마지막 두 버튼이 가능한 한 스크롤 없이 보이도록 조정합니다. */
+        @media (orientation: landscape) and (max-height: 480px) {
+            #app-drawer { padding-top: 8px; padding-bottom: calc(8px + env(safe-area-inset-bottom)); }
+            .drawer-head { margin-bottom: 6px; }
+            .drawer-action { padding: 9px 10px; margin-bottom: 5px; }
+            .drawer-bottom-row { padding-top: 5px; }
+            .drawer-bottom-row .drawer-action { padding: 10px 2px; margin-bottom: 0; }
+        }
 
         /* 화면 전환 탭을 헤더에 배치해 별도 탭 행 제거 */
         #tab-menu {
@@ -330,22 +343,8 @@
         .setting-group input[type="checkbox"] {
             width: 16px; height: 16px; accent-color: #007aff; cursor: pointer;
         }
-        /* Resolve EDL: 열람 탭 전용, 재생 조작 버튼과 분리 */
-        .resolve-export-panel {
-            display: flex; flex-direction: column; gap: 6px;
-            padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
-            background: #1e1e1e; border-top: 1px solid #333;
-            flex-shrink: 0;
-        }
-        .resolve-export-actions { display: flex; align-items: center; gap: 10px; }
-        #export-resolve-edl { flex: 0 0 auto; padding: 11px 15px; font-weight: bold; }
-        #resolve-export-status { color: #bbb; font-size: 12px; line-height: 1.35; overflow-wrap: anywhere; }
-        #resolve-export-guide { color: #999; font-size: 11px; line-height: 1.45; }
+        /* EDL 내보내기는 서랍으로 이동. List 화면은 마커 목록에 공간을 사용합니다. */
         #read-start-tc:invalid { border-color: #ff3b30; }
-        @media (max-width: 420px) {
-            .resolve-export-actions { align-items: stretch; flex-direction: column; gap: 5px; }
-            #export-resolve-edl { width: 100%; }
-        }
 
         #read-list-container {
             flex: 1; overflow-y: auto; padding: 12px; background: #121212; touch-action: pan-y;
@@ -380,33 +379,33 @@
     <header>
         <button id="menu-toggle" type="button" aria-label="메뉴 열기" aria-controls="app-drawer" aria-expanded="false">☰</button>
         <div class="title-area">
-            <div id="project-title">Proxy Marker v1.5.6 <span id="offline-badge" style="display:none; font-size:10px; color:#ffcc00; margin-left:5px;">(Offline)</span></div>
+            <div id="project-title">Proxy Marker v1.5.7 <span id="offline-badge" style="display:none; font-size:10px; color:#ffcc00; margin-left:5px;">(Offline)</span></div>
             <div id="creator-credit">Created by yomaLapin</div>
         </div>
         <div class="header-actions">
-            <!-- 탭을 리셋/전체화면 버튼 바로 왼쪽으로 이동 -->
+            <!-- 체크(기록) 복귀 버튼만 헤더에 유지합니다. -->
             <div id="tab-menu" role="group" aria-label="화면 전환">
                 <button id="btn-tab-check" class="tab-btn active">체크 (기록)</button>
-                <button id="btn-tab-read" class="tab-btn">열람 (확인)</button>
             </div>
-            <button id="reset-btn" class="header-btn btn-danger-sm">리셋</button>
-            <button id="fullscreen-btn" class="header-btn">전체화면</button>
         </div>
     </header>
 
-    <!-- v1.5.6: 파일 및 마커 관리의 위치만 옮긴 서랍 메뉴. 기존 버튼 ID/입력 연결은 유지. -->
+    <!-- v1.5.7: 기존 버튼 ID를 유지하여 기능 로직을 그대로 재사용합니다. -->
     <div id="drawer-backdrop" aria-hidden="true"></div>
-    <nav id="app-drawer" aria-label="파일 및 마커 메뉴" aria-hidden="true">
-        <div class="drawer-head">
-            <span class="drawer-title">파일 · 마커 메뉴</span>
-            <button id="drawer-close" type="button" aria-label="메뉴 닫기">×</button>
-        </div>
-        <label class="drawer-action drawer-action-primary" for="video-upload">Video</label>
+    <nav id="app-drawer" aria-label="Menu" aria-hidden="true">
+        <div class="drawer-head"><span class="drawer-title">Menu</span></div>
+        <label class="drawer-action" for="video-upload">Open(file)</label>
         <input type="file" id="video-upload" accept="video/*, audio/*" style="display:none;">
-        <label class="drawer-action" for="json-load">Load</label>
+        <label class="drawer-action" for="json-load">Load(json)</label>
         <input type="file" id="json-load" accept=".json" style="display:none;">
-        <button id="export-save" type="button" class="drawer-action drawer-action-primary">Save</button>
-        <button id="manage-markers" type="button" class="drawer-action">마커 관리</button>
+        <button id="manage-markers" type="button" class="drawer-action">MarkerSet</button>
+        <button id="btn-tab-read" type="button" class="drawer-action">List</button>
+        <button id="export-save" type="button" class="drawer-action">Save(json)</button>
+        <button id="export-resolve-edl" type="button" class="drawer-action">Save(EDL)</button>
+        <div class="drawer-bottom-row">
+            <button id="reset-btn" type="button" class="drawer-action">MarkerReset</button>
+            <button id="fullscreen-btn" type="button" class="drawer-action">FullMode</button>
+        </div>
     </nav>
 
     <!-- [기존 화면] 체크 (기록) 영역 -->
@@ -494,13 +493,6 @@
         </div>
         <div id="read-list-container">
             <!-- 마커 리스트 동적 생성 -->
-        </div>
-        <div class="resolve-export-panel">
-            <div class="resolve-export-actions">
-                <button id="export-resolve-edl" class="btn btn-primary" type="button">Resolve EDL 내보내기</button>
-                <span id="resolve-export-status" role="status">기록을 불러오면 EDL 내보내기가 가능합니다.</span>
-            </div>
-            <p id="resolve-export-guide">위 FPS·TC·시작 TC는 Resolve 원본 타임라인과 일치시켜 주세요. Media Pool의 타임라인 우클릭 → Timelines → Import → Timeline Markers from EDL (일반 EDL 가져오기 아님). 프레임 위치는 가장 가까운 프레임으로 반올림합니다. 흰색은 Cream으로 근사되며, 메모는 EDL 마커 이름 텍스트에 합쳐집니다. 한글·특수문자의 실제 표시와 기존 마커와의 충돌 동작은 Resolve에서 확인해 주세요.</p>
         </div>
     </div>
 
@@ -627,15 +619,13 @@
         const readStartTcInput = document.getElementById('read-start-tc');
         const readDropFrameSelect = document.getElementById('read-drop-frame');
         const exportResolveEdlButton = document.getElementById('export-resolve-edl');
-        const resolveExportStatus = document.getElementById('resolve-export-status');
         const readListContainer = document.getElementById('read-list-container');
 
 
-        // v1.5.6: 서랍 열기/닫기 및 화면 회전 시 헤더 바로 아래에 맞춰 위치 조정.
+        // v1.5.7: 서랍 열기/닫기 및 화면 회전 시 헤더 바로 아래에 맞춰 위치 조정.
         const menuToggle = document.getElementById('menu-toggle');
         const appDrawer = document.getElementById('app-drawer');
         const drawerBackdrop = document.getElementById('drawer-backdrop');
-        const drawerClose = document.getElementById('drawer-close');
         let drawerOpen = false;
 
         function positionDrawer() {
@@ -644,7 +634,7 @@
         }
         function setDrawerOpen(open) {
             drawerOpen = !!open;
-            if (drawerOpen) positionDrawer();
+            if (drawerOpen) { positionDrawer(); updateResolveExportStatus(); }
             appDrawer.classList.toggle('open', drawerOpen);
             drawerBackdrop.classList.toggle('open', drawerOpen);
             appDrawer.setAttribute('aria-hidden', String(!drawerOpen));
@@ -656,7 +646,6 @@
         }
         appDrawer.setAttribute('inert', '');
         menuToggle.addEventListener('click', () => setDrawerOpen(!drawerOpen));
-        drawerClose.addEventListener('click', () => setDrawerOpen(false));
         drawerBackdrop.addEventListener('click', () => setDrawerOpen(false));
         document.addEventListener('keydown', event => {
             if (event.key === 'Escape' && drawerOpen) {
@@ -670,7 +659,8 @@
         [fileInput, jsonLoadInput].forEach(input => {
             input.addEventListener('change', () => setDrawerOpen(false));
         });
-        [document.getElementById('export-save'), document.getElementById('manage-markers')]
+        [document.getElementById('export-save'), document.getElementById('manage-markers'),
+         exportResolveEdlButton, btnTabRead, resetBtn, fullscreenBtn]
             .forEach(btn => btn.addEventListener('click', () => setDrawerOpen(false)));
 
         async function initApp() {
@@ -1539,24 +1529,21 @@
         }
 
         function updateResolveExportStatus() {
-            if (!resolveExportStatus) return;
+            // Save(EDL)는 모든 화면에서 이용합니다. 출력 전 오류 검사는 기존 클릭 핸들러가 수행합니다.
             try {
                 const rate = getResolveRate();
                 const start = parseTimelineTC(readStartTcInput.value, rate);
                 const groups = buildResolveMarkerGroups(rate);
                 if (!currentVideoId || !groups.length) {
-                    resolveExportStatus.textContent = '영상을 열고 마커를 기록하면 EDL로 내보낼 수 있습니다.';
-                    exportResolveEdlButton.disabled = true;
+                    exportResolveEdlButton.title = '영상을 열고 마커를 기록하면 EDL로 저장할 수 있습니다.';
                     return;
                 }
-                if (groups.length) formatTimelineTC(start + groups[groups.length - 1][0] + 1, rate);
+                formatTimelineTC(start + groups[groups.length - 1][0] + 1, rate);
                 const merged = state.records.length - groups.length;
-                resolveExportStatus.textContent = `원본 ${state.records.length}개 → EDL ${groups.length}개` +
-                    (merged ? ` (동일 프레임 ${merged}개 병합)` : '') + ' · 가장 가까운 프레임으로 반올림';
-                exportResolveEdlButton.disabled = false;
+                exportResolveEdlButton.title = `EDL ${groups.length}개` +
+                    (merged ? ` (동일 프레임 ${merged}개 병합)` : '');
             } catch (error) {
-                resolveExportStatus.textContent = `설정 확인: ${error.message}`;
-                exportResolveEdlButton.disabled = true;
+                exportResolveEdlButton.title = `EDL 설정 확인: ${error.message}`;
             }
         }
 

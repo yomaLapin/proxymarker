@@ -377,19 +377,127 @@
         .empty-read-msg {
             text-align: center; color: #666; margin-top: 40px; font-size: 14px;
         }
+
+        /* v1.6.0 SRT 제작 모드: 기존 Marking/MarkList 화면 스타일에는 영향 주지 않음 */
+        .drawer-srt-divider { border-top: 1px solid #444; margin: 4px 0 10px; flex-shrink: 0; }
+        body.srt-mode #speed-btn { display: none; }
+        #srt-history-controls {
+            display: none; position: absolute; right: 10px; bottom: 8px; z-index: 13;
+            gap: 6px; touch-action: manipulation;
+        }
+        body.srt-mode #srt-history-controls { display: flex; }
+        #srt-history-controls button {
+            width: 38px; height: 30px; border-radius: 5px;
+            border: 1px solid rgba(255,255,255,.32);
+            background: rgba(0,0,0,.78); color: #fff;
+            font-size: 23px; line-height: 1; font-weight: bold;
+            cursor: pointer; touch-action: manipulation;
+        }
+        #srt-history-controls button:disabled { opacity: .36; }
+        #view-srt { background: #121212; min-height: 0; }
+        .srt-left, .srt-right { min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+        .srt-left { flex: 0 0 auto; }
+        .srt-right { flex: 1 1 auto; }
+        #srt-video-slot { height: clamp(112px, 20dvh, 158px); flex: 0 0 auto; display: flex; min-height: 0; background:#000; }
+        #srt-video-slot #video-container { flex: 1 1 auto; min-height: 0; min-width: 0; }
+        #srt-video-slot #time-overlay { font-size: 11px; left: 8px; bottom: 8px; padding: 4px 6px; }
+        #srt-progress-slot { flex: 0 0 auto; }
+        #srt-progress-slot #progress-container { padding: 8px 10px; }
+        #srt-marker-list {
+            height: 44px; flex: 0 0 44px; min-width: 0; display: flex;
+            align-items: center; gap: 6px; padding: 5px 9px;
+            overflow-x: auto; overflow-y: hidden;
+            background: #1e1e1e; border-bottom: 1px solid #333;
+            touch-action: pan-x; overscroll-behavior-x: contain;
+            scrollbar-width: thin;
+        }
+        .srt-marker-chip {
+            flex: 0 0 auto; display: inline-flex; align-items: center;
+            gap: 6px; padding: 8px 9px; min-height: 32px;
+            background: #303030; color: #ddd; border: 1px solid #454545;
+            border-radius: 5px; font-size: 11px; font-variant-numeric: tabular-nums;
+            white-space: nowrap; cursor: pointer; touch-action: manipulation;
+        }
+        .srt-marker-chip:active { background: #484848; }
+        .srt-marker-dot { display: inline-block; width: 8px; height: 8px; flex: 0 0 8px; border-radius: 50%; }
+        .srt-marker-empty { color:#999; font-size: 11px; white-space: nowrap; }
+        #srt-text-heading {
+            padding: 6px 9px 5px; min-height: 29px; flex: 0 0 auto;
+            display: flex; justify-content: space-between; align-items: center;
+            gap: 8px; background: #1b1b1b;
+        }
+        #srt-text-heading strong { font-size: 12px; white-space: nowrap; }
+        #srt-text-count { color: #aaa; font-size: 10px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; text-align: right; }
+        #srt-text-list {
+            flex: 1 1 auto; min-height: 0; overflow-y: auto;
+            padding: 5px 8px; background:#151515; touch-action: pan-y;
+            overscroll-behavior-y: contain;
+        }
+        .srt-paragraph {
+            width: 100%; display: flex; flex-direction: column; gap: 3px;
+            margin-bottom: 5px; padding: 7px 9px;
+            border-radius: 5px; border: 1px solid transparent;
+            background:#292929; color:#eee; text-align: left;
+            cursor: pointer; touch-action: manipulation;
+        }
+        .srt-paragraph.selected { border-color: #60a5fa; background: #263a54; }
+        .srt-paragraph.complete .srt-paragraph-index { color: #7ed998; }
+        .srt-paragraph-title { display: flex; align-items: center; gap: 6px; min-width: 0; }
+        .srt-paragraph-index { color: #999; font-size: 10px; font-variant-numeric: tabular-nums; flex:0 0 auto; }
+        .srt-paragraph-text { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1 1 auto; }
+        .srt-paragraph-times { display:flex; gap: 14px; color:#b8b8b8; font-size: 10px; font-variant-numeric: tabular-nums; }
+        .srt-paragraph-times .invalid { color: #ffb067; }
+        .srt-paragraph-check { font-size: 11px; color: #7ed998; flex:0 0 auto; }
+        #srt-time-actions {
+            display: flex; gap: 10px; flex: 0 0 auto;
+            padding: 6px 9px calc(6px + env(safe-area-inset-bottom));
+            background: #1e1e1e; border-top: 1px solid #333;
+        }
+        #srt-time-actions button {
+            flex:1 1 0; min-width:0; height: 38px;
+            border: 0; border-radius: 6px; color: #fff;
+            font-size: 13px; font-weight:bold; cursor:pointer; touch-action: manipulation;
+        }
+        #srt-set-start { background: #007aff; }
+        #srt-set-end { background: #444; }
+        #srt-time-actions button:disabled { opacity: .4; }
+        .srt-no-text { padding: 15px 10px; font-size: 12px; color: #999; line-height: 1.65; }
+        @media (orientation: landscape) {
+            #view-srt { flex-direction: row; }
+            #view-srt .srt-left, #view-srt .srt-right { flex: 0 0 50%; width: 50%; height: 100%; }
+            #view-srt .srt-left { border-right: 1px solid #3b3b3b; }
+            #srt-video-slot { height: 58%; flex:0 0 58%; min-height:100px; }
+            #srt-marker-list {
+                height: auto; flex:1 1 auto; min-height: 0;
+                align-items: stretch; flex-direction: column;
+                gap: 4px; overflow-y:auto; overflow-x:hidden;
+                touch-action:pan-y; padding: 7px 9px;
+                border-bottom: none;
+            }
+            .srt-marker-chip { width: 100%; flex: 0 0 auto; min-height: 31px; }
+            #srt-time-actions { padding-bottom: calc(6px + env(safe-area-inset-bottom)); }
+        }
+        @media (orientation: landscape) and (max-height: 360px) {
+            #srt-video-slot { height: 53%; flex-basis:53%; min-height: 85px; }
+            #srt-progress-slot #progress-container { padding: 6px 9px; }
+            #srt-history-controls button { height: 27px; width: 33px; }
+            #srt-time-actions { padding-top: 4px; padding-bottom: calc(4px + env(safe-area-inset-bottom)); }
+            #srt-time-actions button { height: 35px; }
+        }
     </style>
 </head>
 <body>
     <header>
         <button id="menu-toggle" type="button" aria-label="메뉴 열기" aria-controls="app-drawer" aria-expanded="false">☰</button>
         <div class="title-area">
-            <div id="project-title">Proxy Marker v1.5.8 <span id="offline-badge" style="display:none; font-size:10px; color:#ffcc00; margin-left:5px;">(Offline)</span></div>
+            <div id="project-title">Proxy Marker v1.6.0 <span id="offline-badge" style="display:none; font-size:10px; color:#ffcc00; margin-left:5px;">(Offline)</span></div>
             <div id="creator-credit">Created by yomaLapin</div>
         </div>
         <div class="header-actions">
             <!-- 체크(기록) 복귀 버튼만 헤더에 유지합니다. -->
             <div id="tab-menu" role="group" aria-label="화면 전환">
                 <button id="btn-tab-check" class="tab-btn active">Marking</button>
+                <button id="btn-tab-srt" type="button" class="tab-btn">SRT</button>
             </div>
         </div>
     </header>
@@ -407,6 +515,10 @@
         <button id="export-save" type="button" class="drawer-action">Save(json)</button>
         <button id="export-resolve-edl" type="button" class="drawer-action">Save(EDL)</button>
         <button id="btn-tab-read" type="button" class="drawer-action">MarkList</button>
+        <div class="drawer-srt-divider" aria-hidden="true"></div>
+        <label class="drawer-action" for="srt-txt-upload">Open(TXT)</label>
+        <input type="file" id="srt-txt-upload" accept=".txt,text/plain" style="display:none;">
+        <button id="export-srt" type="button" class="drawer-action">Save(SRT)</button>
         <div class="drawer-bottom-row">
             <button id="reset-btn" type="button" class="drawer-action">MarkerReset</button>
             <button id="fullscreen-btn" type="button" class="drawer-action">FullMode</button>
@@ -425,6 +537,10 @@
                 </div>
                 <div id="time-overlay">00:00:00 / 00:00:00</div>
                 <button id="speed-btn" type="button" aria-label="재생 배속 변경">×1</button>
+                <div id="srt-history-controls" aria-label="SRT 작업 취소 및 재실행">
+                    <button type="button" id="srt-undo" aria-label="시간 기록 취소" title="Undo" disabled>↶</button>
+                    <button type="button" id="srt-redo" aria-label="취소한 기록 복원" title="Redo" disabled>↷</button>
+                </div>
                 <div id="video-placeholder" style="position: absolute; color: #888; text-align: center; pointer-events: none; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%;">
                     영상을 불러와주세요.
                 </div>
@@ -456,6 +572,26 @@
         </div>
     </div>
 
+
+    <!-- v1.6.0 SRT 제작: 동일 영상 플레이어/진행바를 두 화면 사이에서 이동해 재사용 -->
+    <div id="view-srt" class="app-body" aria-label="SRT 제작 화면">
+        <section class="srt-left" aria-label="영상 탐색 및 마커">
+            <div id="srt-video-slot"></div>
+            <div id="srt-progress-slot"></div>
+            <div id="srt-marker-list" aria-label="녹음 마커 위치 목록"></div>
+        </section>
+        <section class="srt-right" aria-label="TXT 문단 및 자막 기록">
+            <div id="srt-text-heading">
+                <strong>TXT 문단</strong>
+                <span id="srt-text-count">TXT를 불러와주세요</span>
+            </div>
+            <div id="srt-text-list" role="listbox" aria-label="자막 문단 선택"></div>
+            <div id="srt-time-actions">
+                <button type="button" id="srt-set-start">시작</button>
+                <button type="button" id="srt-set-end">종료</button>
+            </div>
+        </section>
+    </div>
 
     <!-- [열람 (확인) 화면 영역] -->
     <div id="view-read" class="app-body">
@@ -544,7 +680,7 @@
 
 
         const DB_NAME = 'ProxyMarkerDB';
-        const DB_VERSION = 1;
+        const DB_VERSION = 2; // v1.6.0: 기존 projects/settings를 보존하며 SRT 저장 영역만 추가
         let db = null;
 
 
@@ -558,6 +694,9 @@
                     }
                     if (!database.objectStoreNames.contains('projects')) {
                         database.createObjectStore('projects', { keyPath: 'id' });
+                    }
+                    if (!database.objectStoreNames.contains('srtProjects')) {
+                        database.createObjectStore('srtProjects', { keyPath: 'id' });
                     }
                 };
                 request.onsuccess = (e) => {
@@ -616,6 +755,20 @@
 
         const btnTabCheck = document.getElementById('btn-tab-check');
         const btnTabRead = document.getElementById('btn-tab-read');
+        const btnTabSrt = document.getElementById('btn-tab-srt');
+        const viewSrt = document.getElementById('view-srt');
+        const srtVideoSlot = document.getElementById('srt-video-slot');
+        const srtProgressSlot = document.getElementById('srt-progress-slot');
+        const markingVideoHome = document.querySelector('#view-check .panel-left');
+        const srtMarkers = document.getElementById('srt-marker-list');
+        const srtTextList = document.getElementById('srt-text-list');
+        const srtTextCount = document.getElementById('srt-text-count');
+        const srtTxtInput = document.getElementById('srt-txt-upload');
+        const srtExportBtn = document.getElementById('export-srt');
+        const srtStartBtn = document.getElementById('srt-set-start');
+        const srtEndBtn = document.getElementById('srt-set-end');
+        const srtUndoBtn = document.getElementById('srt-undo');
+        const srtRedoBtn = document.getElementById('srt-redo');
         const viewCheck = document.getElementById('view-check');
         const viewRead = document.getElementById('view-read');
         const readSortSelect = document.getElementById('read-sort');
@@ -661,11 +814,11 @@
         window.addEventListener('resize', () => { if (drawerOpen) positionDrawer(); });
         window.addEventListener('orientationchange', () => { if (drawerOpen) positionDrawer(); });
         // 파일 선택 창은 서랍을 닫기 전에 열도록 두고, 파일 선택 후 닫습니다.
-        [fileInput, jsonLoadInput].forEach(input => {
+        [fileInput, jsonLoadInput, srtTxtInput].forEach(input => {
             input.addEventListener('change', () => setDrawerOpen(false));
         });
         [document.getElementById('export-save'), document.getElementById('manage-markers'),
-         exportResolveEdlButton, btnTabRead, resetBtn, fullscreenBtn]
+         exportResolveEdlButton, btnTabRead, resetBtn, fullscreenBtn, srtExportBtn]
             .forEach(btn => btn.addEventListener('click', () => setDrawerOpen(false)));
 
         async function initApp() {
@@ -802,6 +955,7 @@
                     currentVideoId = `${file.name}_${file.size}_${file.lastModified}_${Math.floor(dur)}`;
                     
                     await loadProject(currentVideoId);
+                    await loadSrtProject(currentVideoId);
 
 
                     if (window.legacyRecords) {
@@ -1134,6 +1288,7 @@
                 markerList.appendChild(item);
             });
             markerList.parentElement.scrollTop = markerList.parentElement.scrollHeight;
+            renderSrtMarkers();
         }
 
 
@@ -1323,23 +1478,32 @@
            ====================================================================== */
 
 
-        // 탭 메뉴 클릭 이벤트
-        btnTabCheck.addEventListener('click', () => {
-            btnTabCheck.classList.add('active');
-            btnTabRead.classList.remove('active');
-            viewCheck.classList.add('active-view');
-            viewRead.classList.remove('active-view');
-        });
-
-
-        btnTabRead.addEventListener('click', () => {
-            btnTabRead.classList.add('active');
-            btnTabCheck.classList.remove('active');
-            viewRead.classList.add('active-view');
-            viewCheck.classList.remove('active-view');
-            
-            renderReadView();
-        });
+        // SRT에서도 동일 <video>와 진행바를 이동하여 사용합니다. 재생 위치가 끊기지 않습니다.
+        function setAppView(mode) {
+            const useSrt = mode === 'srt';
+            if (useSrt) {
+                srtVideoSlot.appendChild(videoContainer);
+                srtProgressSlot.appendChild(progressContainer);
+                // 자막 싱크 작업은 항상 1배속. Marking의 배속 선택은 보존합니다.
+                video.playbackRate = 1;
+            } else {
+                markingVideoHome.appendChild(videoContainer);
+                markingVideoHome.appendChild(progressContainer);
+                video.playbackRate = speeds[currentSpeedIdx];
+            }
+            document.body.classList.toggle('srt-mode', useSrt);
+            viewCheck.classList.toggle('active-view', mode === 'marking');
+            viewRead.classList.toggle('active-view', mode === 'list');
+            viewSrt.classList.toggle('active-view', useSrt);
+            btnTabCheck.classList.toggle('active', mode === 'marking');
+            btnTabSrt.classList.toggle('active', useSrt);
+            btnTabRead.classList.toggle('active', mode === 'list');
+            if (mode === 'list') renderReadView();
+            if (useSrt) { renderSrtMarkers(); renderSrtParagraphs(); }
+        }
+        btnTabCheck.addEventListener('click', () => setAppView('marking'));
+        btnTabSrt.addEventListener('click', () => setAppView('srt'));
+        btnTabRead.addEventListener('click', () => setAppView('list'));
 
 
         // FPS와 시작 TC는 Resolve 화면 미리보기를 꺼도 EDL 설정에 필요하므로 항상 활성화합니다.
@@ -1654,6 +1818,256 @@
             });
         }
 
+
+        /* ================================================================
+           v1.6.0 SRT: TXT 단위 자막 시간 기록 / IndexedDB 자동 저장
+           기존 state.records 및 projects 스토어는 수정하지 않습니다.
+           ================================================================ */
+        const SRT_HISTORY_LIMIT = 60;
+        const emptySrtState = () => ({ fileName: '', entries: [], selectedIndex: 0, undo: [], redo: [] });
+        let srtState = emptySrtState();
+        let srtSaveQueue = Promise.resolve();
+        const isSrtTime = v => typeof v === 'number' && Number.isFinite(v) && v >= 0;
+        const cleanSrtEntry = e => ({
+            text: String((e && e.text) || ''),
+            start: isSrtTime(e && e.start) ? e.start : null,
+            end: isSrtTime(e && e.end) ? e.end : null
+        });
+        const snapshotSrt = () => ({
+            selectedIndex: srtState.selectedIndex,
+            entries: srtState.entries.map(cleanSrtEntry)
+        });
+        const cleanSrtSnapshot = snap => ({
+            selectedIndex: Math.max(0, Math.trunc(Number(snap?.selectedIndex) || 0)),
+            entries: Array.isArray(snap?.entries) ? snap.entries.map(cleanSrtEntry) : []
+        });
+        function restoreSrtSnapshot(snap) {
+            const safe = cleanSrtSnapshot(snap);
+            srtState.entries = safe.entries;
+            srtState.selectedIndex = Math.min(safe.selectedIndex, Math.max(0, safe.entries.length - 1));
+        }
+        async function loadSrtProject(videoId) {
+            try {
+                const saved = await dbGet('srtProjects', videoId);
+                // 비디오 전환 중 예전 영상의 비동기 결과가 덮어쓰지 않도록 확인.
+                if (currentVideoId !== videoId) return;
+                if (saved) {
+                    srtState = {
+                        fileName: String(saved.fileName || ''),
+                        entries: (Array.isArray(saved.entries) ? saved.entries : []).map(cleanSrtEntry),
+                        selectedIndex: Math.max(0, Number(saved.selectedIndex) || 0),
+                        undo: (Array.isArray(saved.undo) ? saved.undo : []).slice(-SRT_HISTORY_LIMIT).map(cleanSrtSnapshot),
+                        redo: (Array.isArray(saved.redo) ? saved.redo : []).slice(-SRT_HISTORY_LIMIT).map(cleanSrtSnapshot)
+                    };
+                    srtState.selectedIndex = Math.min(srtState.selectedIndex, Math.max(0, srtState.entries.length - 1));
+                } else srtState = emptySrtState();
+                renderSrtParagraphs();
+            } catch (error) {
+                console.error('SRT 작업 복원 오류:', error);
+                srtState = emptySrtState();
+                renderSrtParagraphs();
+                alert('SRT 작업 데이터 복원에 실패했습니다. 저장 공간을 확인해 주세요.');
+            }
+        }
+        function saveSrtProject() {
+            if (!currentVideoId || !db) return Promise.resolve();
+            // 작업 순서와 독립적인 불변 스냅샷을 순서대로 저장합니다.
+            const payload = {
+                id: currentVideoId,
+                fileName: srtState.fileName,
+                entries: srtState.entries.map(cleanSrtEntry),
+                selectedIndex: srtState.selectedIndex,
+                undo: srtState.undo.map(cleanSrtSnapshot),
+                redo: srtState.redo.map(cleanSrtSnapshot),
+                updatedAt: new Date().toISOString()
+            };
+            srtSaveQueue = srtSaveQueue.catch(() => {}).then(() => dbPut('srtProjects', payload));
+            srtSaveQueue.catch(err => { console.error('SRT 자동 저장 오류:', err); alert('SRT 자동 저장에 실패했습니다. 브라우저 저장 공간을 확인해 주세요.'); });
+            return srtSaveQueue;
+        }
+        function renderSrtMarkers() {
+            if (!srtMarkers) return;
+            srtMarkers.replaceChildren();
+            if (!state.records.length) {
+                const empty = document.createElement('span');
+                empty.className = 'srt-marker-empty';
+                empty.textContent = '기록된 마커가 없습니다.';
+                srtMarkers.appendChild(empty);
+                return;
+            }
+            state.records.slice().sort((a,b) => a.time - b.time).forEach(record => {
+                const chip = document.createElement('button');
+                chip.type = 'button';
+                chip.className = 'srt-marker-chip';
+                chip.title = `${record.name} · ${formatTime(record.time)}`;
+                const dot = document.createElement('span');
+                dot.className = 'srt-marker-dot';
+                dot.style.backgroundColor = /^#[0-9a-f]{3,8}$/i.test(record.color || '') ? record.color : '#bbb';
+                const time = document.createElement('span');
+                time.textContent = formatTime(record.time);
+                chip.append(dot, time);
+                chip.addEventListener('click', () => {
+                    if (!video.src || video.readyState < 1) return;
+                    video.currentTime = Math.max(0, record.time);
+                    video.pause();
+                    updateTimeOverlay();
+                });
+                srtMarkers.appendChild(chip);
+            });
+        }
+        function formatSrtClock(seconds) {
+            if (!isSrtTime(seconds)) return '--:--:--,---';
+            const total = Math.round(seconds * 1000);
+            const h = Math.floor(total / 3600000);
+            const m = Math.floor(total % 3600000 / 60000);
+            const sec = Math.floor(total % 60000 / 1000);
+            const ms = total % 1000;
+            return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')},${String(ms).padStart(3,'0')}`;
+        }
+        function renderSrtParagraphs() {
+            if (!srtTextList) return;
+            srtTextList.replaceChildren();
+            const entries = srtState.entries;
+            const finished = entries.filter(e => isSrtTime(e.start) && isSrtTime(e.end) && e.end > e.start).length;
+            srtTextCount.textContent = entries.length ? `${srtState.fileName} · ${finished}/${entries.length}` : 'TXT를 불러와주세요';
+            srtStartBtn.disabled = !entries.length || !currentVideoId;
+            srtEndBtn.disabled = !entries.length || !currentVideoId;
+            srtUndoBtn.disabled = !srtState.undo.length;
+            srtRedoBtn.disabled = !srtState.redo.length;
+            if (!entries.length) {
+                const empty = document.createElement('div');
+                empty.className = 'srt-no-text';
+                empty.textContent = '영상과 TXT 파일을 불러오면 문단별 시작·종료 시간을 기록할 수 있습니다. 메뉴 → Open(TXT)';
+                srtTextList.appendChild(empty);
+                return;
+            }
+            const fragment = document.createDocumentFragment();
+            entries.forEach((entry,index) => {
+                const row = document.createElement('button');
+                row.type = 'button';
+                row.className = 'srt-paragraph';
+                row.setAttribute('role', 'option');
+                row.setAttribute('aria-selected', String(index === srtState.selectedIndex));
+                const valid = isSrtTime(entry.start) && isSrtTime(entry.end) && entry.end > entry.start;
+                if (valid) row.classList.add('complete');
+                if (index === srtState.selectedIndex) row.classList.add('selected');
+                row.title = entry.text;
+                const top = document.createElement('span'); top.className = 'srt-paragraph-title';
+                const num = document.createElement('span'); num.className = 'srt-paragraph-index'; num.textContent = String(index+1).padStart(3,'0');
+                const label = document.createElement('span'); label.className = 'srt-paragraph-text'; label.textContent = entry.text;
+                top.append(num,label);
+                if (valid) { const done = document.createElement('span'); done.className = 'srt-paragraph-check'; done.textContent = '✓'; top.append(done); }
+                const times = document.createElement('span'); times.className = 'srt-paragraph-times';
+                const start = document.createElement('span'); start.textContent = `IN  ${formatSrtClock(entry.start)}`;
+                const end = document.createElement('span'); end.textContent = `OUT  ${formatSrtClock(entry.end)}`;
+                if (isSrtTime(entry.start) && isSrtTime(entry.end) && entry.end <= entry.start) end.classList.add('invalid');
+                times.append(start,end);
+                row.append(top,times);
+                row.addEventListener('click', () => {
+                    if (srtState.selectedIndex === index) return;
+                    srtState.selectedIndex = index;
+                    srtTextList.querySelectorAll('.srt-paragraph').forEach((el,i) => {
+                        el.classList.toggle('selected', i === index);
+                        el.setAttribute('aria-selected', String(i === index));
+                    });
+                    void saveSrtProject();
+                });
+                fragment.appendChild(row);
+            });
+            srtTextList.appendChild(fragment);
+        }
+        function setSrtTime(which) {
+            if (!currentVideoId || video.readyState < 1) return alert('영상을 먼저 불러와주세요.');
+            const selected = srtState.entries[srtState.selectedIndex];
+            if (!selected) return alert('TXT 문단을 먼저 불러와주세요.');
+            if (!Number.isFinite(video.currentTime)) return;
+            const value = Math.round(video.currentTime * 1000) / 1000;
+            if (selected[which] === value) return;
+            srtState.undo.push(snapshotSrt());
+            if (srtState.undo.length > SRT_HISTORY_LIMIT) srtState.undo.shift();
+            srtState.redo = [];
+            selected[which] = value;
+            // 스크롤 위치를 유지한 채 다시 렌더링합니다.
+            const scroll = srtTextList.scrollTop;
+            renderSrtParagraphs();
+            srtTextList.scrollTop = scroll;
+            void saveSrtProject();
+        }
+        srtStartBtn.addEventListener('click', () => setSrtTime('start'));
+        srtEndBtn.addEventListener('click', () => setSrtTime('end'));
+        srtUndoBtn.addEventListener('click', () => {
+            if (!srtState.undo.length) return;
+            srtState.redo.push(snapshotSrt());
+            restoreSrtSnapshot(srtState.undo.pop());
+            const scrollTop = srtTextList.scrollTop;
+            renderSrtParagraphs();
+            srtTextList.scrollTop = scrollTop;
+            void saveSrtProject();
+        });
+        srtRedoBtn.addEventListener('click', () => {
+            if (!srtState.redo.length) return;
+            srtState.undo.push(snapshotSrt());
+            restoreSrtSnapshot(srtState.redo.pop());
+            const scrollTop = srtTextList.scrollTop;
+            renderSrtParagraphs();
+            srtTextList.scrollTop = scrollTop;
+            void saveSrtProject();
+        });
+        // 영상 터치 탐색 핸들러에 Undo/Redo 터치가 전달되지 않도록 이벤트 분리.
+        ['pointerdown','pointermove','pointerup','pointercancel'].forEach(type => {
+            document.getElementById('srt-history-controls').addEventListener(type, event => event.stopPropagation());
+        });
+        srtTxtInput.addEventListener('change', async (event) => {
+            const file = event.target.files && event.target.files[0];
+            event.target.value = '';
+            if (!file) return;
+            if (!currentVideoId) return alert('먼저 영상 파일을 Open(file)로 불러와주세요.');
+            if (!/\.txt$/i.test(file.name)) return alert('TXT(.txt) 파일만 지원합니다.');
+            if (file.size > 2 * 1024 * 1024) return alert('TXT 파일 크기는 2MB 이하여야 합니다.');
+            try {
+                const text = (await file.text()).replace(/^\uFEFF/,'');
+                const lines = text.split(/\r\n|\r|\n/).map(x=>x.trim()).filter(Boolean);
+                if (!lines.length) return alert('TXT에 문장이 없습니다. 엔터로 문단을 구분해 주세요.');
+                if (srtState.entries.length) {
+                    const same = srtState.entries.length === lines.length && srtState.entries.every((e,i) => e.text === lines[i]);
+                    if (same) return alert('같은 TXT 문단이 이미 등록되어 있습니다. 기존 시간 기록을 유지합니다.');
+                    if (!confirm(`현재 SRT 문단 ${srtState.entries.length}개와 기록된 시간이 새 TXT로 교체됩니다.\n기존 TXT 작업을 초기화하시겠습니까?`)) return;
+                }
+                srtState = { fileName: file.name, entries: lines.map(line=>({text:line,start:null,end:null})), selectedIndex:0,undo:[],redo:[] };
+                renderSrtParagraphs();
+                srtTextList.scrollTop = 0;
+                await saveSrtProject();
+                setAppView('srt');
+            } catch(error) {
+                console.error('TXT 불러오기 오류:', error);
+                alert('TXT를 읽는 동안 문제가 발생했습니다: ' + error.message);
+            }
+        });
+        srtExportBtn.addEventListener('click', () => {
+            if (!currentVideoId || !srtState.entries.length) return alert('영상과 TXT 문단을 먼저 불러와주세요.');
+            const ready = [], invalid = [], missing = [];
+            srtState.entries.forEach((entry,index) => {
+                const hasStart = isSrtTime(entry.start), hasEnd = isSrtTime(entry.end);
+                if (!hasStart || !hasEnd) { missing.push(index+1); return; }
+                if (entry.end <= entry.start || (Number.isFinite(video.duration) && entry.end > video.duration + 0.001)) {
+                    invalid.push(index+1); return;
+                }
+                ready.push({entry,index:index+1});
+            });
+            if (invalid.length) return alert(`시간이 올바르지 않은 문단: ${invalid.join(', ')}\n시작은 종료보다 빨라야 하며 영상 길이를 넘어갈 수 없습니다.`);
+            if (!ready.length) return alert('시작과 종료를 기록한 문단이 없습니다.');
+            for (let i=1;i<ready.length;i++) {
+                const prev=ready[i-1], next=ready[i];
+                if (next.entry.start < prev.entry.end - 0.0005) {
+                    return alert(`문단 ${prev.index}과 ${next.index}의 시간이 겹치거나 순서가 뒤바뀌었습니다. 시간을 확인해 주세요.`);
+                }
+            }
+            if (missing.length && !confirm(`미완료 문단 ${missing.length}개를 제외하고 ${ready.length}개만 SRT로 저장하시겠습니까?\n제외 문단: ${missing.slice(0,15).join(', ')}${missing.length>15?' 외':''}`)) return;
+            const content = ready.map(({entry},i) => `${i+1}\r\n${formatSrtClock(entry.start)} --> ${formatSrtClock(entry.end)}\r\n${entry.text}`).join('\r\n\r\n')+'\r\n';
+            const name = (currentVideoInfo?.name || 'ProxyMarker').replace(/\.[^/.]+$/, '').replace(/[\\/:*?"<>|]/g, '_');
+            // UTF-8 BOM으로 한글 호환성을 높이고 .srt.txt 덧붙임을 피합니다.
+            downloadFile('\uFEFF'+content, `${name}_Subtitles.srt`, 'application/octet-stream');
+        });
 
         // --- PWA Service Worker 기본 등록 ---
         if ('serviceWorker' in navigator) {
